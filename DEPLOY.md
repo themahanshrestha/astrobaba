@@ -19,7 +19,7 @@ The free plan sleeps after inactivity, so the first request after a pause is slo
 3. Netlify dashboard > Add new site > Import from Git > pick the repo. `netlify.toml` sets the
    publish folder (`web`) and proxies `/api/*` to Render, so the browser only talks to Netlify.
 
-## Option C: free, no card: Hugging Face Spaces
+## Option C: Hugging Face Spaces (Docker SDK is paid on some accounts; skip if so)
 
 1. Sign up at huggingface.co (email only).
 2. New > Space > SDK **Docker** > Blank > pick Public (free) > Create.
@@ -32,6 +32,30 @@ The free plan sleeps after inactivity, so the first request after a pause is slo
 Start the app locally (`./start.sh`), then in another terminal run
 `cloudflared tunnel --url http://localhost:8000` and share the `trycloudflare.com` address it prints.
 It works only while your computer and the app are running.
+
+## Option E: PythonAnywhere free plan (no card)
+
+Gives `https://YOURUSERNAME.pythonanywhere.com`. The free plan has a small daily CPU allowance, which is
+plenty for personal use, and the app does not sleep.
+
+1. Sign up at pythonanywhere.com (Beginner plan is free, no card).
+2. Open a **Bash console** and run (replace nothing if the repo is public; otherwise upload
+   `astrobaba-local.zip` on the Files tab and `unzip` it instead):
+   ```
+   git clone -b claude/stoic-goodall-al5pgm https://github.com/themahanshrestha/astrobaba.git
+   mkvirtualenv --python=python3.12 astro
+   pip install "setuptools<70" wheel
+   pip install --no-build-isolation pyswisseph
+   pip install fastapi a2wsgi tzdata
+   ```
+3. **Web** tab > Add a new web app > Manual configuration > Python 3.12.
+4. Set **Virtualenv** to `/home/YOURUSERNAME/.virtualenvs/astro`.
+5. Click the **WSGI configuration file** link, delete its contents, paste the contents of
+   `pythonanywhere_wsgi.py`, and change `YOURUSERNAME`.
+6. Click **Reload**, then open `https://YOURUSERNAME.pythonanywhere.com`.
+
+Free accounts can only reach an allowlist of sites. Place search inside the app uses the browser, not the
+server, so it still works, and the app falls back to its built-in city list.
 
 ## Before sharing the link with other people
 
