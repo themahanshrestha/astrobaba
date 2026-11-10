@@ -19,13 +19,14 @@ The free plan sleeps after inactivity, so the first request after a pause is slo
 3. Netlify dashboard > Add new site > Import from Git > pick the repo. `netlify.toml` sets the
    publish folder (`web`) and proxies `/api/*` to Render, so the browser only talks to Netlify.
 
-## Option C: Hugging Face Spaces (Docker SDK is paid on some accounts; skip if so)
+## Option C: Hugging Face Spaces, Gradio SDK (free, no card, no terminal)
 
-1. Sign up at huggingface.co (email only).
-2. New > Space > SDK **Docker** > Blank > pick Public (free) > Create.
-3. Run `python tools/package.py`, unzip `dist/astrobaba-huggingface.zip`, then in the Space open
-   Files > Add file > Upload files and drag in everything from the unzipped folder.
-4. The Space builds from the `Dockerfile` (a few minutes). Free Spaces sleep when idle.
+The Docker SDK can be paid; the Gradio SDK is free. `app.py` simply starts this app inside a Gradio Space.
+
+1. Sign up at huggingface.co. New > Space > SDK **Gradio** > Blank > hardware **CPU basic (free)** > Public > Create.
+2. Run `python tools/package.py` (or use the `astrobaba-huggingface.zip` you were sent), unzip it, then on the
+   Space open Files > Add file > Upload files and drag in everything from the unzipped folder.
+3. Wait for the build (a few minutes). The Space opens your app when the status is Running.
 
 ## Option D: a temporary public link to the copy on your own computer (no account)
 

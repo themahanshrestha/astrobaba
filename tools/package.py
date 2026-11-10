@@ -37,14 +37,14 @@ Your birth details stay in your browser; nothing is stored on a server.
 print("wrote", zpath, zpath.stat().st_size // 1024, "KB")
 
 
-# ---- Hugging Face Spaces bundle: files at the zip root, README with Space metadata --------------
+# ---- Hugging Face Spaces bundle (Gradio SDK, which is free; runs our FastAPI app via app.py) ----
 HF_README = """---
 title: AstroBaba
 emoji: ✨
 colorFrom: purple
 colorTo: pink
-sdk: docker
-app_port: 8000
+sdk: gradio
+app_file: app.py
 pinned: false
 license: agpl-3.0
 ---
@@ -54,13 +54,28 @@ license: agpl-3.0
 Western astrology, Vedic astrology, Chinese BaZi and numerology read side by side. For
 self-reflection and entertainment. Birth details are kept only in your browser.
 """
+HF_APP = """# Hugging Face Spaces entry point: serves the AstroBaba web app and API on the Space's port.
+import os
+
+import uvicorn
+
+from api.main import app
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 7860)))
+"""
+HF_REQ = "pyswisseph\ntzdata\npydantic>=2\n"   # gradio (installed by the Space) provides fastapi and uvicorn
+SKIP_NAMES = {"start.sh", "start.bat", "netlify.toml", "render.yaml", "README.md", "Dockerfile", ".dockerignore",
+              "requirements.txt", "pythonanywhere_wsgi.py", "DEPLOY.md", "PLAN.md"}
 hf = OUT / "astrobaba-huggingface.zip"
 with zipfile.ZipFile(hf, "w", zipfile.ZIP_DEFLATED) as z:
     for p in sorted(ROOT.rglob("*")):
         rel = p.relative_to(ROOT)
-        if p.is_dir() or SKIP_DIRS & set(rel.parts) or p.suffix == ".pyc" or rel.parts[0] in ("tests",) \
-                or rel.name in ("start.sh", "start.bat", "netlify.toml", "render.yaml", "README.md"):
+        if p.is_dir() or SKIP_DIRS & set(rel.parts) or p.suffix == ".pyc" or rel.parts[0] in ("tests", "tools") \
+                or rel.name in SKIP_NAMES:
             continue
         z.write(p, rel.as_posix())
     z.writestr("README.md", HF_README)
+    z.writestr("app.py", HF_APP)
+    z.writestr("requirements.txt", HF_REQ)
 print("wrote", hf, hf.stat().st_size // 1024, "KB")
