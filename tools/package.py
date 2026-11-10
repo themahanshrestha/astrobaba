@@ -35,3 +35,32 @@ AstroBaba-preview.html opens in any browser with no setup and shows three sample
 Your birth details stay in your browser; nothing is stored on a server.
 """)
 print("wrote", zpath, zpath.stat().st_size // 1024, "KB")
+
+
+# ---- Hugging Face Spaces bundle: files at the zip root, README with Space metadata --------------
+HF_README = """---
+title: AstroBaba
+emoji: ✨
+colorFrom: purple
+colorTo: pink
+sdk: docker
+app_port: 8000
+pinned: false
+license: agpl-3.0
+---
+
+# AstroBaba
+
+Western astrology, Vedic astrology, Chinese BaZi and numerology read side by side. For
+self-reflection and entertainment. Birth details are kept only in your browser.
+"""
+hf = OUT / "astrobaba-huggingface.zip"
+with zipfile.ZipFile(hf, "w", zipfile.ZIP_DEFLATED) as z:
+    for p in sorted(ROOT.rglob("*")):
+        rel = p.relative_to(ROOT)
+        if p.is_dir() or SKIP_DIRS & set(rel.parts) or p.suffix == ".pyc" or rel.parts[0] in ("tests",) \
+                or rel.name in ("start.sh", "start.bat", "netlify.toml", "render.yaml", "README.md"):
+            continue
+        z.write(p, rel.as_posix())
+    z.writestr("README.md", HF_README)
+print("wrote", hf, hf.stat().st_size // 1024, "KB")

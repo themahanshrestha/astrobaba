@@ -19,6 +19,20 @@ The free plan sleeps after inactivity, so the first request after a pause is slo
 3. Netlify dashboard > Add new site > Import from Git > pick the repo. `netlify.toml` sets the
    publish folder (`web`) and proxies `/api/*` to Render, so the browser only talks to Netlify.
 
+## Option C: free, no card: Hugging Face Spaces
+
+1. Sign up at huggingface.co (email only).
+2. New > Space > SDK **Docker** > Blank > pick Public (free) > Create.
+3. Run `python tools/package.py`, unzip `dist/astrobaba-huggingface.zip`, then in the Space open
+   Files > Add file > Upload files and drag in everything from the unzipped folder.
+4. The Space builds from the `Dockerfile` (a few minutes). Free Spaces sleep when idle.
+
+## Option D: a temporary public link to the copy on your own computer (no account)
+
+Start the app locally (`./start.sh`), then in another terminal run
+`cloudflared tunnel --url http://localhost:8000` and share the `trycloudflare.com` address it prints.
+It works only while your computer and the app are running.
+
 ## Before sharing the link with other people
 
 - **Swiss Ephemeris licence:** AGPL. A public, closed-source or paid service needs the commercial licence.
