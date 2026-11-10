@@ -244,7 +244,7 @@
     blocks.push(block("About this reading", { kind: "note", text: "This is a simplified Four Pillars reading (main stems and branches; hidden stems and luck pillars are not used). The hour pillar uses clock time and the day changes at 11pm." }));
     sections.push({ id: "bazi", title: "Chinese Four Pillars", icon: "yin", blocks });
 
-    return { snapshot: snap, sections, disclaimer: D.DISCLAIMER };
+    return A.simplify({ snapshot: snap, sections, disclaimer: D.DISCLAIMER });
   }
   root.AB.buildReport = buildReport; root.AB.levelLabel = levelLabel;
 })(typeof window !== "undefined" ? window : globalThis);

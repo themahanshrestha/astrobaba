@@ -264,15 +264,20 @@ async function viewProfile(id, tab = "overview") {
     <div class="row" style="margin-top:20px"><a class="btn" href="#/compare">Compare with someone</a><button class="btn ghost" id="print-all" type="button">Save as PDF</button></div>
   </div>`;
   const panel = $("#panel");
+  panel.addEventListener("click", (e) => {
+    const lb = e.target.closest(".linkbtn");
+    if (lb) { const r = lb.previousElementSibling; r.hidden = !r.hidden; lb.textContent = r.hidden ? "Read more" : "Show less"; return; }
+    if (e.target.id === "more-detail") { $("#adv-box").hidden = false; e.target.hidden = true; }
+  });
   const show = (t) => {
     tab = t;
     document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === t));
-    panel.innerHTML = `<div class="fade"><h2>${esc(titles[t])}</h2>${t === "numbers" ? numbersPanel(d) : t === "charts" ? chartsPanel(d) : t === "agreement" ? agreementPanel(d) : secs[t].blocks.map((b, i) => blockHtml(b, meta, i)).join("")}</div>`;
+    panel.innerHTML = `<div class="fade"><h2>${esc(titles[t])}</h2>${t === "numbers" ? numbersPanel(d) : t === "charts" ? chartsPanel(d) : t === "agreement" ? agreementPanel(d) : sectionHtml(secs[t].blocks, meta, false)}</div>`;
     history.replaceState(null, "", `#/p/${id}/${t}`);
     const btn = $(`#tab-${t}`); btn && btn.scrollIntoView({ inline: "center", block: "nearest" });
   };
   $("#print-all").onclick = () => {
-    const body = (t) => t === "numbers" ? numbersPanel(d) : t === "charts" ? chartsPanel(d) : t === "agreement" ? agreementPanel(d) : secs[t].blocks.map((b, i) => blockHtml(b, meta, i)).join("");
+    const body = (t) => t === "numbers" ? numbersPanel(d) : t === "charts" ? chartsPanel(d) : t === "agreement" ? agreementPanel(d) : sectionHtml(secs[t].blocks, meta, true);
     panel.innerHTML = TAB_ORDER.map((t) => `<h2 style="margin-top:1.2em">${esc(titles[t])}</h2>${body(t)}`).join("");
     document.querySelectorAll("details").forEach((x) => x.open = true);
     document.body.classList.add("print-all");
@@ -287,6 +292,23 @@ function why(src) {
   if (!src || !src.length) return "";
   return `<details class="why"><summary>Why this?</summary><ul>${src.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></details>`;
 }
+function clip(t, max = 230) {
+  t = String(t ?? "");
+  if (t.length <= max) return esc(t);
+  const m = t.match(/[^.!?]+[.!?]+(?:\s|$)/g) || [t];
+  let a = "", i = 0;
+  while (i < m.length && a.length < 140) { a += m[i]; i++; }
+  const rest = m.slice(i).join("").trim();
+  if (!rest) return esc(t);
+  return `${esc(a.trim())} <span class="rest" hidden>${esc(rest)}</span> <button class="linkbtn" type="button">Read more</button>`;
+}
+function sectionHtml(blocks, meta, showAll) {
+  const main = blocks.filter((b) => !b.adv), adv = blocks.filter((b) => b.adv);
+  let h = main.map((b, i) => blockHtml(b, meta, i)).join("");
+  if (adv.length) h += showAll ? adv.map((b, i) => blockHtml(b, meta, i)).join("")
+    : `<button class="btn ghost small" type="button" id="more-detail">Show more detail (${adv.length})</button><div id="adv-box" hidden>${adv.map((b, i) => blockHtml(b, meta, i)).join("")}</div>`;
+  return h;
+}
 function blockHtml(b, meta, i) {
   const badge = b.time && meta.time_mode !== "exact" ? `<span class="badge">depends on birth time</span>` : "";
   if (b.kind === "locked") return `<div class="locked"><h3>${esc(b.h)}</h3><p>🔒 ${esc(b.text)}</p></div>`;
@@ -295,8 +317,8 @@ function blockHtml(b, meta, i) {
   if (b.kind === "traits") inner = b.items.map((t) => `<div class="trait"><h4>${esc(t.name)}</h4><div>${esc(t.tag)}</div><div class="lvl">${esc(t.level_label)}</div>${sysBars(t.per_system)}</div>`).join("");
   else if (b.kind === "views") inner = `<div class="views">${b.items.map((v) => `<div class="v"><b>${esc(v.label)}</b>${esc(v.text)}</div>`).join("")}</div>`;
   else if (b.kind === "pillars") inner = `<div class="pgrid">${b.items.map((p) => `<div class="pcell"><small>${esc(p.name)}</small><b>${esc(p.stem)}</b><b>${esc(p.branch)}</b><span>${esc(p.polarity)} ${esc(p.stem_el)}</span><span>${esc(p.animal)} · ${esc(p.branch_el)}</span></div>`).join("")}</div>`;
-  else if (b.kind === "list") inner = `<div class="list">${b.items.map((v) => `<p class="item">${v.label ? `<b>${esc(v.label)}.</b> ` : ""}${esc(v.text)}</p>`).join("")}</div>`;
-  else inner = `<p>${esc(b.text)}</p>`;
+  else if (b.kind === "list") inner = `<div class="list">${b.items.map((v) => `<p class="item">${v.label ? `<b>${esc(v.label)}.</b> ` : ""}${clip(v.text)}</p>`).join("")}</div>`;
+  else inner = `<p>${clip(b.text)}</p>`;
   return `<div class="card block${b.kind === "traits" ? " tint-lav" : ""}"><h3>${esc(b.h)}${badge}</h3>${inner}${why(b.src)}</div>`;
 }
 function sysBars(ps) {

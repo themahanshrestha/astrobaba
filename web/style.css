@@ -131,3 +131,6 @@ th{font-weight:500;color:var(--ink2);font-size:.8rem;text-transform:uppercase;le
   details.why summary{display:none}
   .fade{animation:none}
 }
+
+.linkbtn{background:none;border:0;padding:0;color:var(--lav-d);font:inherit;cursor:pointer;text-decoration:underline}
+#more-detail{margin:4px 0 14px}

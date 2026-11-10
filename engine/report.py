@@ -425,4 +425,5 @@ def build_report(prof: dict, synth: dict) -> dict:
                          text="This is a simplified Four Pillars reading (main stems and branches; hidden stems and luck pillars are not used). The hour pillar uses clock time and the day changes at 11pm."))
     sections.append({"id": "bazi", "title": "Chinese Four Pillars", "icon": "yin", "blocks": blocks})
 
-    return {"snapshot": snap, "sections": sections, "disclaimer": DISCLAIMER}
+    from .simplify import simplify
+    return simplify({"snapshot": snap, "sections": sections, "disclaimer": DISCLAIMER}, prof)
