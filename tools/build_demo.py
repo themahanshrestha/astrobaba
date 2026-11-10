@@ -50,6 +50,7 @@ def main(out):
     js = js.replace("function saveProfiles(p) {", "function saveProfiles(p) { return; ")
     js = js.replace('<button class="btn ghost" id="print-all" type="button">Save as PDF</button>', "")
     js = js.replace('$("#print-all").onclick =', '($("#print-all") || {}).onclick =')
+    js = js.replace('app.innerHTML = `<div class="card fade">${steps}${body}', 'app.innerHTML = `<div class="card fade"><div class="note" style="margin-bottom:14px"><b>Preview only.</b> You can fill this in, but this hosted preview cannot calculate new charts. Run AstroBaba on your computer to read your own.</div>${steps}${body}')
     js = js.replace('if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});', "")
     js = js.replace('fetch("/api/health").catch(() => {});', "")
     shim = """

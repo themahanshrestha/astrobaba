@@ -1,0 +1,8 @@
+# Render blueprint: New > Blueprint > pick this repo. Serves the whole app (API + web).
+services:
+  - type: web
+    name: astrobaba
+    runtime: docker
+    plan: free
+    branch: claude/stoic-goodall-al5pgm
+    healthCheckPath: /api/health
