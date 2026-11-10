@@ -129,8 +129,10 @@ def api_profile(b: BirthIn):
 
 
 def _public(prof: dict) -> dict:
-    p = {k: v for k, v in prof.items() if k != "dasha"}
-    p["dasha"] = prof["dasha"]
+    from content.signs import SIGN_TEXT
+    p = dict(prof)
+    p["rising_timeline"] = [{**r, "western_kw": SIGN_TEXT[r["western"]]["kw"], "vedic_kw": SIGN_TEXT[r["vedic"]]["kw"]}
+                            for r in prof["rising_timeline"]]
     w = p["western"]
     w = {**w, "cusps": w.get("cusps")}
     p["western"] = w
@@ -155,6 +157,16 @@ def api_compare(c: CompareIn):
 
 WEB = ROOT / "web"
 app.mount("/static", StaticFiles(directory=WEB), name="static")
+
+
+@app.get("/manifest.webmanifest")
+def manifest():
+    return FileResponse(WEB / "manifest.webmanifest", media_type="application/manifest+json")
+
+
+@app.get("/sw.js")
+def service_worker():
+    return FileResponse(WEB / "sw.js", media_type="application/javascript", headers={"Service-Worker-Allowed": "/"})
 
 
 @app.get("/")

@@ -1,6 +1,6 @@
 # AstroBaba
 
-A self-discovery platform that reads Western astrology, Vedic astrology and numerology side by side and
+A self-discovery platform that reads Western astrology, Vedic astrology, Chinese BaZi and numerology side by side and
 shows where they agree and where they differ. It covers character, strengths, watch-outs, career,
 hobbies, relationships (including what to look for in a partner), stress and recovery, life lessons,
 current timing, and compatibility for romantic, business, family and friendship pairs.
@@ -30,6 +30,8 @@ python -m pytest -q tests
 |---|---|
 | `engine/astro.py` | Swiss Ephemeris wrapper: tropical + sidereal (Lahiri), houses, nakshatras, divisional charts, Vimshottari, aspects |
 | `engine/numerology.py` | Pythagorean and Chaldean numerology |
+| `engine/bazi.py` | Chinese Four Pillars |
+| `engine/timing.py` | Profections, progressions, solar return, transits |
 | `engine/profile.py` | Builds a profile; handles exact / approximate / unknown birth time by sampling the plausible window |
 | `engine/synthesis.py` | Maps placements and numbers to 13 shared traits, scores agreement across systems |
 | `engine/baseline.json` | Population calibration (regenerate with `python tools/calibrate.py`) |
@@ -37,7 +39,7 @@ python -m pytest -q tests
 | `engine/compat.py` | Synastry, Ashtakoota, numerology and trait compatibility |
 | `content/` | All interpretive text (original). Edit here to change what people read |
 | `api/main.py` | FastAPI app (`/api/profile`, `/api/compare`, `/api/places`) and static hosting |
-| `web/` | Mobile-first responsive front end (no build step) |
+| `web/` | Mobile-first responsive front end (no build step), installable PWA, print-to-PDF |
 
 ## How accuracy is handled
 
@@ -60,3 +62,15 @@ commercial licence before distributing a closed-source or paid version.
 Profiles are stored only in the browser (`localStorage`). The server computes and returns results and
 stores nothing. Place suggestions use the free Open-Meteo geocoding API from the user's browser, with a
 small built-in city list as fallback.
+
+## Feature map
+
+Core self, strengths, watch-outs, inner world, mind, career, hobbies, relationships (what to look for
+in a partner), life areas (houses), stress and recovery, growth, current season, Chinese Four Pillars,
+numbers, charts and cross-system agreement. Compatibility covers romantic, business, family and
+friends. Approximate or unknown birth times are handled with probabilities and a Rising-sign helper.
+
+## Install as an app
+
+Open the site in a mobile browser and choose "Add to Home Screen". When you are ready for native
+apps, the same API can back a Capacitor or React Native shell.

@@ -13,14 +13,27 @@ from content.numbers import CATEGORY_INTRO, KARMIC_DEBT, NUMBERS
 from content.signs import SIGN_TEXT
 from content.traits import TENSIONS, TRAITS
 from content.vedic import (ANTAR_FLAVOR, MAHA_TEXT, NAKSHATRA_INFO, SADE_SATI, YOGAS)
+from content.extra import (DAY_MASTER, ANIMAL_TEXT, ELEMENT_BALANCE, HOUSE_NAME, HOUSE_THEME, JUPITER_SIGN, ORD,
+                           PLANET_HOUSE_LEAD, SATURN_SIGN, YEAR_LORD)
 from . import astro as A
 from . import synthesis as S
 
 ROLE = {"Sun": "sense of self and vitality", "Moon": "emotional life", "Mercury": "thinking and communication",
         "Venus": "way of loving and valuing", "Mars": "drive and way of acting", "Jupiter": "growth and judgement",
         "Saturn": "discipline and responsibility"}
-LEVEL_LABEL = {"strong": "Strong theme · all three systems agree", "supported": "Supported · two systems agree",
-               "single": "One system emphasises this", "none": ""}
+SYS_NAME = {"western": "Western", "vedic": "Vedic", "numerology": "Numerology", "bazi": "BaZi"}
+
+
+def level_label(r):
+    n = len(r["supporters"])
+    names = ", ".join(SYS_NAME[x] for x in r["supporters"])
+    if n >= 3:
+        return f"Strong theme · {n} of 4 systems agree ({names})"
+    if n == 2:
+        return f"Supported · {names} agree"
+    if n == 1:
+        return f"Emphasised by {names}"
+    return ""
 
 
 def _opts(dist: dict[str, float], min_p: float = 0.2) -> list[tuple[str, float]]:
@@ -69,13 +82,17 @@ def _lead(rows, k=3):
 def _trait_chip(r):
     t = TRAITS[r["trait"]]
     return {"key": r["trait"], "name": t["title"], "tag": t["tag"], "level": r["level"],
-            "level_label": LEVEL_LABEL[r["level"]], "score": r["score"], "per_system": r["per_system"]}
+            "level_label": level_label(r), "score": r["score"], "per_system": r["per_system"]}
 
 
 def _trait_block(r, field, heading=None):
     t = TRAITS[r["trait"]]
     return _block(heading or t["title"], text=t[field],
                   src=[e["source"] for e in r["evidence"]], time=any(e["needs_time"] for e in r["evidence"]))
+
+
+def meta_exact(prof):
+    return prof["meta"]["time_mode"] == "exact"
 
 
 def _asp(prof, a, b):
@@ -134,8 +151,8 @@ def build_report(prof: dict, synth: dict) -> dict:
     agree = [r for r in synth["domains"]["character"] if r["level"] == "strong"][:3]
     if agree:
         names = ", ".join(TRAITS[r["trait"]]["title"].replace("The ", "") for r in agree)
-        blocks.append(_block("Where all three systems agree", src=["Cross-system comparison"],
-                             text=f"Western, Vedic and numerology each independently emphasise: {names}. "
+        blocks.append(_block("Where most systems agree", src=["Cross-system comparison"],
+                             text=f"At least three of the four systems (Western, Vedic, numerology, Chinese BaZi) independently emphasise: {names}. "
                                   "Treat these as the most reliable themes in your profile."))
     sections.append({"id": "overview", "title": "Your core self", "icon": "sun", "blocks": blocks})
 
@@ -148,6 +165,10 @@ def build_report(prof: dict, synth: dict) -> dict:
                              text=f"{p} in {s} is {word}: your {ROLE[p]} works with unusual ease and confidence."))
     for y in v["yogas"][:3]:
         blocks.append(_block(f"{y} yoga", text=YOGAS[y], src=[f"{y} yoga · Vedic"]))
+    jw, jv = w["planets"]["Jupiter"]["sign"], v["planets"]["Jupiter"]["sign"]
+    blocks.append(_block("Where your luck tends to grow", src=[f"Jupiter in {jw} · Western", f"Jupiter in {jv} · Vedic"],
+                         text=f"With Jupiter in {jw} (Western){'' if jw == jv else f' and {jv} (Vedic)'}, you tend to find {JUPITER_SIGN[jw]}"
+                              + ("." if jw == jv else f"; the Vedic view adds {JUPITER_SIGN[jv]}.")))
     num_s = []
     for key, label in (("life_path", "Life Path"), ("expression", "Expression")):
         val = n["life_path"]["number"] if key == "life_path" else n.get("pythagorean", {}).get("expression")
@@ -298,6 +319,10 @@ def build_report(prof: dict, synth: dict) -> dict:
     # ---------- purpose ----------------------------------------------------------------------------------
     nn = w["planets"]["North Node"]["sign"]
     blocks = [_block(f"Your growth direction (North Node in {nn})", text=SIGN_TEXT[nn]["node"], src=[f"North Node in {nn} · Western"])]
+    sw, sv = w["planets"]["Saturn"]["sign"], v["planets"]["Saturn"]["sign"]
+    blocks.append(_block("Your slow-burn lessons (Saturn)", src=[f"Saturn in {sw} · Western", f"Saturn in {sv} · Vedic"],
+                         text=f"Saturn in {sw} (Western){'' if sw == sv else f' and {sv} (Vedic)'} points to {SATURN_SIGN[sw]}"
+                              + ("." if sw == sv else f"; the Vedic view adds {SATURN_SIGN[sv]}.") + " These are not punishments: they are where patience becomes mastery."))
     blocks.append(_block(f"Life Path {lpn}: your central lesson", text=f"{NUMBERS[lpn]['title']}: {NUMBERS[lpn]['core']}", src=["Numerology"]))
     if n.get("maturity"):
         m = n["maturity"]
@@ -324,9 +349,80 @@ def build_report(prof: dict, synth: dict) -> dict:
     py = n["personal"]["year"]
     blocks.append(_block(f"Personal Year {py} ({today.year})", text=NUMBERS[py]["year"], src=["Personal Year · Numerology"]))
     pm = n["personal"]["month"]
-    blocks.append(_block(f"This month: Personal Month {pm}", text=f"The tone of this month is {NUMBERS[pm]['title'].lower()}: {NUMBERS[pm]['core']}", src=["Personal Month · Numerology"]))
+    blocks.append(_block(f"This month: Personal Month {pm}", text=f"{NUMBERS[pm]['title']}: {NUMBERS[pm]['core']}", src=["Personal Month · Numerology"]))
     if v.get("sade_sati"):
         blocks.append(_block("Saturn and your Moon (Sade Sati)", text=SADE_SATI[v["sade_sati"]], src=["Saturn transit · Vedic"]))
+    tm = prof["timing"]
+    pr = tm["profection"]
+    if pr:
+        blocks.append(_block(f"Your year at a glance: {ORD(pr['house'])}-house profection (age {pr['age']})",
+                             text=f"Hellenistic astrology activates one house per year of life. This year's focus is {pr['house_name'].lower()}: {pr['house_theme']}. "
+                                  f"The ruler of the year is {YEAR_LORD[pr['lord']]}",
+                             src=[f"Annual profection from {pr['sign']} Rising · Western (Hellenistic)"], time=True))
+    pmoon = tm["progressed"]["moon_sign"]
+    blocks.append(_block(f"Your emotional chapter: progressed Moon in {pmoon}",
+                         text=f"Your progressed Moon changes sign about every two and a half years and sets the emotional tone of the current chapter. In {pmoon}: " + SIGN_TEXT[pmoon]["moon"],
+                         src=[f"Secondary progression · Moon in {pmoon} · Western"]))
+    if tm["progressed"]["sun_sign"] != snap["sun_western"]["sign"]:
+        ps = tm["progressed"]["sun_sign"]
+        blocks.append(_block(f"A longer chapter: progressed Sun in {ps}",
+                             text=f"Your progressed Sun has moved into {ps}, a roughly thirty-year chapter that adds the qualities of {', '.join(SIGN_TEXT[ps]['kw'])} to your sense of self.",
+                             src=[f"Secondary progression · Sun in {ps} · Western"]))
+    sr = tm["solar_return"]
+    blocks.append(_block("Your solar-return year", src=["Solar return · Western"], time=bool(sr["asc_sign"]),
+                         text=f"Your most recent solar return was on {sr['date']}. Its Moon was in {sr['moon_sign']}, colouring the emotional tone of the year with {', '.join(SIGN_TEXT[sr['moon_sign']]['kw'])} qualities."
+                              + (f" Its Rising sign was {sr['asc_sign']}: the year asks you to meet life with {', '.join(SIGN_TEXT[sr['asc_sign']]['kw'])} energy." if sr["asc_sign"] else "")))
+    tr = tm["transits"]
+    for planet in ("Jupiter", "Saturn"):
+        t = tr[planet]
+        base = f"{planet} is currently in {t['sign']}{' (retrograde)' if t['retro'] else ''}"
+        if t["house"]:
+            text = f"{base}, moving through your {ORD(t['house'])} house ({HOUSE_NAME[t['house']-1].lower()}): {HOUSE_THEME[t['house']-1]}. " + (
+                "A period of growth and opportunity in that area." if planet == "Jupiter" else "A period of responsibility and steady building in that area.")
+        else:
+            text = base + ". Add a birth time to see which area of life this touches."
+        blocks.append(_block(f"{planet} now", text=text, src=[f"Transit of {planet} · Western"], time=bool(t["house"])))
     sections.append({"id": "timing", "title": "Your current season", "icon": "clock", "blocks": blocks})
+
+    # ---------- life areas (houses) ---------------------------------------------------------------------------
+    blocks = []
+    if meta_exact(prof):
+        for planet, (heading, lead) in PLANET_HOUSE_LEAD.items():
+            h = w["planets"][planet]["house"]
+            blocks.append(_block(f"{heading}: {planet} in your {ORD(h)} house", src=[f"{planet} in house {h} · Western (Placidus)"],
+                                 text=f"{lead.capitalize()}. This house covers {HOUSE_THEME[h-1]}."))
+        # Vedic houses
+        lag = v["lagna"]["sign"]
+        for pl, label in (("Moon", "Moon"), ("Venus", "Venus")):
+            h = v["planets"][pl]["house"]
+            blocks.append(_block(f"Vedic view: {label} in the {ORD(h)} house", src=[f"{label} in house {h} from {lag} Lagna · Vedic (whole sign)"],
+                                 text=f"From your {lag} Lagna, the {label} sits in the {ORD(h)} house, which covers {HOUSE_THEME[h-1]}."))
+    else:
+        blocks.append(_block("Life areas need an exact birth time", kind="locked",
+                             text="Which house each planet lives in depends on your exact birth time. With an exact time, this section shows where you shine, feel at home, find love, spend energy, grow and build."))
+    sections.insert(next(i for i, x in enumerate(sections) if x["id"] == "wellbeing"),
+                    {"id": "houses", "title": "Life areas", "icon": "home", "blocks": blocks})
+
+    # ---------- Chinese BaZi ------------------------------------------------------------------------------------------
+    bz = prof["bazi"]
+    dm = bz["day_master"]
+    names = {"year": "Year", "month": "Month", "day": "Day", "hour": "Hour"}
+    pillars = [{"name": names[k], **bz[k]} for k in ("year", "month", "day", "hour") if bz.get(k)]
+    blocks = [_block("Your Four Pillars", kind="pillars", items=pillars, src=["Chinese BaZi: year changes at Lichun, month by solar term, day by the 60-day cycle, hour by two-hour branch"])]
+    if not bz.get("hour"):
+        blocks.append(_block("The Hour pillar", kind="locked", text="The Hour pillar needs an exact birth time. The three other pillars are shown."))
+    t, tx = DAY_MASTER[dm]
+    blocks.append(_block(f"Your Day Master: {dm} · {t}", text=tx, src=[f"Day pillar stem · Chinese BaZi"]))
+    ya = bz["year"]["animal"]; ma = bz["month"]["animal"]
+    blocks.append(_block(f"Your Year animal: {ya}", text=ANIMAL_TEXT[ya] + " (How others often see you, and your family or social background.)", src=["Year pillar branch · Chinese BaZi"]))
+    blocks.append(_block(f"Your Month animal: {ma}", text=ANIMAL_TEXT[ma] + " (Often linked with career style.)", src=["Month pillar branch · Chinese BaZi"]))
+    el = bz["elements"]; tot = sum(el.values())
+    dom_e = max(el, key=el.get); low_e = min(el, key=el.get)
+    blocks.append(_block(f"Dominant element: {dom_e}", text=ELEMENT_BALANCE[dom_e]["dom"], src=["Element count across pillars · Chinese BaZi"]))
+    if el[low_e] == 0 or el[low_e] / tot < 0.08:
+        blocks.append(_block(f"Missing or weak element: {low_e}", text=ELEMENT_BALANCE[low_e]["low"], src=["Element count across pillars · Chinese BaZi"]))
+    blocks.append(_block("About this reading", kind="note",
+                         text="This is a simplified Four Pillars reading (main stems and branches; hidden stems and luck pillars are not used). The hour pillar uses clock time and the day changes at 11pm."))
+    sections.append({"id": "bazi", "title": "Chinese Four Pillars", "icon": "yin", "blocks": blocks})
 
     return {"snapshot": snap, "sections": sections, "disclaimer": DISCLAIMER}

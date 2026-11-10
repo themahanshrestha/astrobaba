@@ -245,3 +245,85 @@ def test_api_validation_and_happy_path():
     assert c.post("/api/profile", json={**body, "time_mode": "exact", "time": None}).status_code == 200  # falls back to unknown
     assert c.post("/api/compare", json={"a": body, "b": body, "relation": "nope"}).status_code == 422
     assert c.get("/api/places?q=pokh").json()["results"][0]["name"] == "Pokhara"
+
+
+# ---- BaZi -------------------------------------------------------------------------------------------
+from engine import bazi as BZ, timing as T  # noqa: E402
+
+
+def test_bazi_known_pillars_chinese_new_year_2024():
+    p = BZ.pillars(321.0, dt.datetime(2024, 2, 10, 12, 0), True)    # 10 Feb 2024: Jia-Chen year, Bing-Yin month, Jia-Chen day
+    assert (p["year"]["stem"], p["year"]["branch"]) == ("Jia", "Chen")
+    assert (p["month"]["stem"], p["month"]["branch"]) == ("Bing", "Yin")
+    assert (p["day"]["stem"], p["day"]["branch"]) == ("Jia", "Chen")
+
+
+def test_bazi_day_cycle_anchor_and_lichun_boundary():
+    assert BZ.day_index(dt.date(2000, 1, 1)) == 54                  # Wu-Wu
+    before = BZ.pillars(300.0, dt.datetime(1990, 2, 3, 12, 0), False)   # before Lichun: still previous BaZi year
+    after = BZ.pillars(316.0, dt.datetime(1990, 2, 5, 12, 0), False)
+    assert before["year"]["animal"] == "Snake" and after["year"]["animal"] == "Horse"   # 1989 = Snake, 1990 = Horse
+
+
+def test_bazi_year_animals():
+    assert BZ.pillars(60.0, dt.datetime(1990, 5, 17, 12), False)["year"]["animal"] == "Horse"
+    assert BZ.pillars(60.0, dt.datetime(2000, 5, 17, 12), False)["year"]["animal"] == "Dragon"
+
+
+def test_bazi_late_zi_hour_rolls_day():
+    a = BZ.pillars(60.0, dt.datetime(2020, 5, 1, 22, 30), True)
+    b = BZ.pillars(60.0, dt.datetime(2020, 5, 1, 23, 30), True)
+    assert a["day"]["stem"] != b["day"]["stem"] and b["hour"]["branch"] == "Zi"
+
+
+def test_bazi_relations():
+    assert BZ.animal_relation("Rat", "Ox") == "harmony" and BZ.animal_relation("Rat", "Horse") == "clash"
+    assert BZ.animal_relation("Rat", "Dragon") == "trine"
+    assert BZ.element_relation("Wood", "Fire") == "supportive" and BZ.element_relation("Wood", "Earth") == "controlling"
+
+
+# ---- timing --------------------------------------------------------------------------------------------
+def test_profection_cycle():
+    assert T.profection("Virgo", 0)["house"] == 1 and T.profection("Virgo", 12)["house"] == 1
+    assert T.profection("Virgo", 7)["sign"] == "Aries" and T.profection("Virgo", 7)["lord"] == "Mars"
+    assert T.profection(None, 5) is None
+
+
+def test_solar_return_is_on_or_before_today_and_near_birthday():
+    p = mk()
+    sr = p["timing"]["solar_return"]
+    d = dt.date.fromisoformat(sr["date"])
+    assert d <= TODAY and abs((d - dt.date(2026, 5, 17)).days) <= 2
+
+
+def test_timing_without_exact_time_has_no_house_claims():
+    p = mk("approx", 8, 0, 180)
+    assert p["timing"]["transits"]["Saturn"]["house"] is None
+
+
+def test_rising_timeline_covers_day_for_unknown_time():
+    p = mk("unknown")
+    assert len(p["rising_timeline"]) >= 10     # ascendant passes through all twelve signs in 24 hours
+
+
+def test_four_systems_in_synthesis_and_report_sections():
+    p = mk()
+    s = synthesize(p)
+    assert set(s["domains"]["character"][0]["per_system"]) == {"western", "vedic", "numerology", "bazi"}
+    ids = [x["id"] for x in build_report(p, s)["sections"]]
+    assert "bazi" in ids and "houses" in ids and "timing" in ids
+
+
+def test_houses_locked_without_exact_time():
+    p = mk("approx", 8, 0, 180)
+    houses = next(x for x in build_report(p, synthesize(p))["sections"] if x["id"] == "houses")
+    assert houses["blocks"][0]["kind"] == "locked"
+
+
+def test_compare_includes_bazi():
+    a, b = mk(), mk(d=dt.date(1992, 11, 3), h=7, m=0)
+    r = compat.compare(a, b, synthesize(a), synthesize(b), "romantic", "A", "B")
+    assert any(m["name"] == "Chinese BaZi" for m in r["methods"]) and r["bazi_notes"]
+    assert abs(sum(compat.METHOD_WEIGHTS["romantic"].values()) - 1) < 1e-9
+    for rel in compat.METHOD_WEIGHTS:
+        assert abs(sum(compat.METHOD_WEIGHTS[rel].values()) - 1) < 1e-9

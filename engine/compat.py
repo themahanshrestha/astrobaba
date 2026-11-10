@@ -26,11 +26,30 @@ WEIGHTS = {
     "friends": {"emotional": .20, "communication": .30, "values": .25, "drive": .15, "stability": .10},
 }
 METHOD_WEIGHTS = {
-    "romantic": {"western": .35, "vedic": .35, "numerology": .10, "traits": .20},
-    "business": {"western": .35, "vedic": .20, "numerology": .15, "traits": .30},
-    "family": {"western": .30, "vedic": .30, "numerology": .10, "traits": .30},
-    "friends": {"western": .35, "vedic": .25, "numerology": .10, "traits": .30},
+    "romantic": {"western": .30, "vedic": .30, "numerology": .08, "bazi": .12, "traits": .20},
+    "business": {"western": .30, "vedic": .18, "numerology": .12, "bazi": .10, "traits": .30},
+    "family": {"western": .27, "vedic": .27, "numerology": .08, "bazi": .10, "traits": .28},
+    "friends": {"western": .30, "vedic": .22, "numerology": .08, "bazi": .10, "traits": .30},
 }
+ANIMAL_SCORE = {"harmony": 92, "trine": 84, "same": 66, "neutral": 60, "clash": 34}
+ANIMAL_NOTE = {"harmony": "your year animals form a classic 'secret friend' pairing",
+               "trine": "your year animals belong to the same trine of allies",
+               "same": "you share the same year animal",
+               "neutral": "your year animals have no special pairing",
+               "clash": "your year animals sit opposite each other, which tradition reads as friction"}
+ELEMENT_SCORE = {"supportive": 82, "same": 72, "neutral": 62, "controlling": 48}
+ELEMENT_NOTE = {"supportive": "your Day Master elements nourish each other", "same": "your Day Masters share an element",
+                "neutral": "your Day Master elements are neutral to each other", "controlling": "one Day Master element controls the other, which can feel like pressure"}
+
+
+def bazi_resonance(a: dict, b: dict) -> dict:
+    from . import bazi as BZ
+    ba, bb = a["bazi"], b["bazi"]
+    ar = BZ.animal_relation(ba["year"]["animal"], bb["year"]["animal"])
+    er = BZ.element_relation(ba["day_master"].split()[1], bb["day_master"].split()[1])
+    score = round(0.5 * ANIMAL_SCORE[ar] + 0.5 * ELEMENT_SCORE[er])
+    return {"score": score, "notes": [f"In Chinese astrology, {ANIMAL_NOTE[ar]} ({ba['year']['animal']} and {bb['year']['animal']}).",
+                                      f"{ELEMENT_NOTE[er].capitalize()} ({ba['day_master']} and {bb['day_master']})."]}
 ELEMENT_FRIEND = {("fire", "air"), ("air", "fire"), ("earth", "water"), ("water", "earth")}
 
 
@@ -244,8 +263,10 @@ def compare(pa: dict, pb: dict, sa: dict, sb: dict, relation: str, name_a: str, 
     vedic_score = round(ash["total"] / 36 * 100)
     num = numerology_resonance(pa, pb)
     tc = trait_compare(sa, sb)
+    bz = bazi_resonance(pa, pb)
     mw = METHOD_WEIGHTS[relation]
-    overall = round(western_score * mw["western"] + vedic_score * mw["vedic"] + num["score"] * mw["numerology"] + tc["score"] * mw["traits"])
+    overall = round(western_score * mw["western"] + vedic_score * mw["vedic"] + num["score"] * mw["numerology"]
+                    + bz["score"] * mw["bazi"] + tc["score"] * mw["traits"])
     def level(x): return "high" if x >= 65 else "low" if x < 45 else "mid"
     def overall_level(x): return "high" if x >= 72 else "low" if x < 52 else "mid"
     dim_out = [{"key": d, "title": DIMENSION_TITLE[d], "score": dims[d], "text": DIMENSION_TEXT[d][level(dims[d])]} for d in dims]
@@ -266,9 +287,10 @@ def compare(pa: dict, pb: dict, sa: dict, sb: dict, relation: str, name_a: str, 
         "methods": [{"name": "Western synastry", "score": western_score, "how": "Planet-to-planet aspects between both charts, weighted for this type of relationship."},
                     {"name": "Vedic Guna Milan", "score": vedic_score, "how": f"Ashtakoota {ash['total']:g}/36 from Moon sign and nakshatra (gender-neutral modern version)."},
                     {"name": "Numerology resonance", "score": num["score"], "how": "Life Path, Soul Urge and Expression compared."},
+                    {"name": "Chinese BaZi", "score": bz["score"], "how": "Year-animal relationship and Day Master elements."},
                     {"name": "Trait compatibility", "score": tc["score"], "how": "Overlap, complement and friction between your combined trait profiles."}],
         "dimensions": dim_out, "strengths": strengths, "care": care,
-        "ashtakoota": ash, "numerology_notes": num["notes"], "friction_systems": friction_sys,
+        "ashtakoota": ash, "numerology_notes": num["notes"], "bazi_notes": bz["notes"], "friction_systems": friction_sys,
         "shared": [{"key": t, "title": TRAITS[t]["title"], "text": TRAITS[t]["tag"]} for t in tc["shared"]],
         "complement": ([{"who": name_a, "key": t, "title": TRAITS[t]["title"], "text": TRAITS[t]["gives"]} for t in tc["a_brings"]] +
                        [{"who": name_b, "key": t, "title": TRAITS[t]["title"], "text": TRAITS[t]["gives"]} for t in tc["b_brings"]]),

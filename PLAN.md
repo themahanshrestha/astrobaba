@@ -1,6 +1,6 @@
 # AstroBaba — Product & Technical Plan (v0.1, pre-build)
 
-Status: v0.2. Owner decisions are recorded in section 15; the Phase 1-4 MVP is built (see section 15). Section 14 questions are now answered.
+Status: v0.3. Owner decisions are recorded in section 15; the Phase 1-4 MVP is built (see section 15). Section 14 questions are now answered.
 
 ---
 
@@ -287,3 +287,23 @@ Web app, English, one user + partner profile, Tier-1 systems only, 4 reports (Co
 - Ashtakoota Varna/Vashya use simplified gender-neutral rules and the Yoni matrix was entered from memory of the standard table: **verify against a trusted reference before treating Guna Milan as authoritative.**
 - Ephemeris runs on the built-in Moshier model (sub-arcminute). Set `ASTROBABA_EPHE_PATH` to Swiss Ephemeris files for full precision.
 - Interpretation text is original and concise (about 9,000 words); expanding depth per placement is the main way to improve the product.
+
+### v0.3 additions (Tier 2 features now built)
+- **Chinese BaZi** as a fourth voting system: Four Pillars (year at Lichun, month by solar term, day by the 60-day cycle, hour by two-hour branch), Day Master, year/month animals, element balance. Simplified: no hidden stems or luck pillars; hour uses clock time; day rolls at 11pm.
+- **Timing techniques:** Hellenistic annual profections, secondary progressions (Moon and Sun), solar return (Moon and Rising), Jupiter and Saturn transits with houses.
+- **Life areas:** which house the Sun, Moon, Venus, Mars, Jupiter and Saturn live in (exact birth time only), plus Vedic Moon/Venus houses.
+- **Depth:** Jupiter-sign (where luck grows) and Saturn-sign (slow-burn lessons) readings.
+- **Birth-time helper:** for approximate or unknown times, a timeline showing which Rising sign / Lagna applies at each time, with keywords, so people can recognise themselves.
+- **Compatibility** now includes a BaZi view (year-animal harmony/trine/clash and Day Master elements); weights re-balanced per relationship type.
+- **Delivery:** installable PWA (manifest, offline shell, icons) and a print-friendly "Save as PDF" of the whole report.
+- Recalibrated the population baseline for four systems; 45 tests.
+
+### Deliberately not built
+| Item | Why |
+|---|---|
+| Ashtakavarga, Shadbala | Need large lookup tables; I will not enter them from memory in a product that claims accuracy. Add from a verified source. |
+| Astrocartography | Needs a map UI and careful line geometry; low value before core depth is expanded |
+| Chiron, asteroids | Need the Swiss Ephemeris asteroid files (`seas_*.se1`); add once `ASTROBABA_EPHE_PATH` ships in deployment |
+| Human Design, Gene Keys, Mayan, Celtic, Tarot birth cards | Tier 3 / experimental; weakest traditional basis and they would dilute the cross-system agreement signal |
+| Accounts, server-side storage | Profiles are browser-only by design (privacy); add with proper auth, encryption and a data-deletion flow before going public |
+| Guided rectification from life events | The helper timeline exists; event-based rectification needs a validated method |

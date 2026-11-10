@@ -11,7 +11,7 @@ const EL_COLOR = { fire: "#fadde4", earth: "#dcf0e6", air: "#dcebf7", water: "#e
 const EL = ["fire", "earth", "air", "water"];
 const DASHA_COLOR = { Sun: "#fde6d5", Moon: "#dcebf7", Mars: "#fadde4", Rahu: "#e7dff5", Jupiter: "#fbf1cc", Saturn: "#dcebf7", Mercury: "#dcf0e6", Ketu: "#e7dff5", Venus: "#fadde4" };
 const TINTS = ["lav", "blush", "mint", "peach", "sky", "butter"];
-const TAB_ICON = { overview: "☉", strengths: "✦", watchouts: "◈", inner: "☽", mind: "☿", career: "✧", hobbies: "❀", relationships: "♡", wellbeing: "❁", purpose: "➶", timing: "◷", numbers: "№", charts: "◎", agreement: "⚖" };
+const TAB_ICON = { overview: "☉", strengths: "✦", watchouts: "◈", inner: "☽", mind: "☿", career: "✧", hobbies: "❀", relationships: "♡", houses: "⌂", wellbeing: "❁", purpose: "➶", timing: "◷", bazi: "☯", numbers: "№", charts: "◎", agreement: "⚖" };
 
 /* ---------- storage ---------- */
 const KEY = "astrobaba.profiles.v1";
@@ -222,7 +222,7 @@ function summaryOf(d) {
 }
 
 /* ---------- profile ---------- */
-const TAB_ORDER = ["overview", "strengths", "watchouts", "inner", "mind", "career", "hobbies", "relationships", "wellbeing", "purpose", "timing", "numbers", "charts", "agreement"];
+const TAB_ORDER = ["overview", "strengths", "watchouts", "inner", "mind", "career", "hobbies", "relationships", "houses", "wellbeing", "purpose", "timing", "bazi", "numbers", "charts", "agreement"];
 async function viewProfile(id, tab = "overview") {
   const p = profiles.find((x) => x.id === id);
   if (!p) { location.hash = "#/"; return; }
@@ -252,7 +252,7 @@ async function viewProfile(id, tab = "overview") {
     ${notes.length ? `<div class="banner"><b>About your birth data</b><ul>${notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul></div>` : ""}
     <div class="tabs" role="tablist" aria-label="Report sections">${TAB_ORDER.map((t) => `<button role="tab" id="tab-${t}" aria-selected="${t === tab}" data-tab="${t}">${TAB_ICON[t]} ${esc(titles[t])}</button>`).join("")}</div>
     <section id="panel" role="tabpanel" aria-live="polite"></section>
-    <div class="row" style="margin-top:20px"><a class="btn" href="#/compare">Compare with someone</a></div>
+    <div class="row" style="margin-top:20px"><a class="btn" href="#/compare">Compare with someone</a><button class="btn ghost" id="print-all" type="button">Save as PDF</button></div>
   </div>`;
   const panel = $("#panel");
   const show = (t) => {
@@ -261,6 +261,14 @@ async function viewProfile(id, tab = "overview") {
     panel.innerHTML = `<div class="fade"><h2>${esc(titles[t])}</h2>${t === "numbers" ? numbersPanel(d) : t === "charts" ? chartsPanel(d) : t === "agreement" ? agreementPanel(d) : secs[t].blocks.map((b, i) => blockHtml(b, meta, i)).join("")}</div>`;
     history.replaceState(null, "", `#/p/${id}/${t}`);
     const btn = $(`#tab-${t}`); btn && btn.scrollIntoView({ inline: "center", block: "nearest" });
+  };
+  $("#print-all").onclick = () => {
+    const body = (t) => t === "numbers" ? numbersPanel(d) : t === "charts" ? chartsPanel(d) : t === "agreement" ? agreementPanel(d) : secs[t].blocks.map((b, i) => blockHtml(b, meta, i)).join("");
+    panel.innerHTML = TAB_ORDER.map((t) => `<h2 style="margin-top:1.2em">${esc(titles[t])}</h2>${body(t)}`).join("");
+    document.querySelectorAll("details").forEach((x) => x.open = true);
+    document.body.classList.add("print-all");
+    const restore = () => { document.body.classList.remove("print-all"); window.removeEventListener("afterprint", restore); show(tab); };
+    window.addEventListener("afterprint", restore); setTimeout(() => window.print(), 100);
   };
   document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => { show(b.dataset.tab); window.scrollTo({ top: $(".tabs").offsetTop - 4, behavior: "smooth" }); });
   show(TAB_ORDER.includes(tab) ? tab : "overview");
@@ -277,13 +285,14 @@ function blockHtml(b, meta, i) {
   let inner = "";
   if (b.kind === "traits") inner = b.items.map((t) => `<div class="trait"><h4>${esc(t.name)}</h4><div>${esc(t.tag)}</div><div class="lvl">${esc(t.level_label)}</div>${sysBars(t.per_system)}</div>`).join("");
   else if (b.kind === "views") inner = `<div class="views">${b.items.map((v) => `<div class="v"><b>${esc(v.label)}</b>${esc(v.text)}</div>`).join("")}</div>`;
+  else if (b.kind === "pillars") inner = `<div class="pgrid">${b.items.map((p) => `<div class="pcell"><small>${esc(p.name)}</small><b>${esc(p.stem)}</b><b>${esc(p.branch)}</b><span>${esc(p.polarity)} ${esc(p.stem_el)}</span><span>${esc(p.animal)} · ${esc(p.branch_el)}</span></div>`).join("")}</div>`;
   else if (b.kind === "list") inner = `<div class="list">${b.items.map((v) => `<p class="item">${v.label ? `<b>${esc(v.label)}.</b> ` : ""}${esc(v.text)}</p>`).join("")}</div>`;
   else inner = `<p>${esc(b.text)}</p>`;
   return `<div class="card block${b.kind === "traits" ? " tint-lav" : ""}"><h3>${esc(b.h)}${badge}</h3>${inner}${why(b.src)}</div>`;
 }
 function sysBars(ps) {
   const row = (lab, v, cls) => `<span>${lab}</span><div class="bar" title="${lab}: ${v}"><i class="${cls}" style="width:${Math.min(100, v / 3 * 100)}%"></i></div>`;
-  return `<div class="bars" aria-label="Strength of this theme in each system">${row("Western", ps.western, "b-w")}${row("Vedic", ps.vedic, "b-v")}${row("Numerology", ps.numerology, "b-n")}</div>`;
+  return `<div class="bars" aria-label="Strength of this theme in each system">${row("Western", ps.western, "b-w")}${row("Vedic", ps.vedic, "b-v")}${row("Numerology", ps.numerology, "b-n")}${row("BaZi", ps.bazi, "b-z")}</div>`;
 }
 
 /* numbers */
@@ -322,6 +331,9 @@ function chartsPanel(d) {
     ${v.yogas.length ? `<p class="small" style="margin-top:10px"><b>Yogas:</b> ${v.yogas.join(", ")}</p>` : ""}</div>`;
   if (w.aspects.length) html += `<div class="card"><h3>Main aspects</h3><div class="scroll-x"><table><tr><th>Between</th><th>Aspect</th><th>Orb</th></tr>${w.aspects.slice(0, 12).map((a) => `<tr><td>${esc(a.a)} – ${esc(a.b)}</td><td>${a.type}</td><td>${a.orb}°</td></tr>`).join("")}</table></div></div>`;
   html += dashaPanel(d.profile.dasha);
+  const tl = d.profile.rising_timeline || [];
+  if (tl.length) html += `<div class="card"><h3>Which Rising sign sounds like you?</h3><p class="small muted">Your birth time isn't exact, so your Rising sign depends on when in the window you were born. Read the keywords and see which feels most like how people first meet you. That can help narrow your time.</p>
+    ${tl.map((r) => `<div class="trait"><b>${esc(r.from)}${r.to !== r.from ? "–" + esc(r.to) : ""}</b> · Western ${SIGN_G[r.western]} ${r.western} · Vedic ${SIGN_G[r.vedic]} ${r.vedic}<div class="small muted">${esc((r.western_kw || []).join(", "))}</div></div>`).join("")}</div>`;
   return html;
 }
 function polar(cx, cy, r, ang) { const a = ang * Math.PI / 180; return [cx + r * Math.cos(a), cy - r * Math.sin(a)]; }
@@ -381,7 +393,7 @@ function agreementPanel(d) {
     <tr><td>Moon</td><td>${SIGN_G[snap.moon_western.sign]} ${snap.moon_western.sign}</td><td>${SIGN_G[snap.moon_vedic.sign]} ${snap.moon_vedic.sign}</td><td>${snap.moon_western.sign === snap.moon_vedic.sign ? "✓ agree" : ""}</td></tr>
     <tr><td>Rising / Lagna</td><td>${snap.rising_western ? SIGN_G[snap.rising_western.sign] + " " + snap.rising_western.sign : "–"}</td><td>${snap.lagna_vedic ? SIGN_G[snap.lagna_vedic.sign] + " " + snap.lagna_vedic.sign : "–"}</td><td>${snap.rising_western && snap.lagna_vedic && snap.rising_western.sign === snap.lagna_vedic.sign ? "✓ agree" : ""}</td></tr></table></div>`;
   html += d.consensus.map((c) => `<div class="card"><h3>${DOM_TITLE[c.domain]}: your strongest themes</h3>
-    ${c.rows.slice(0, 5).map((r) => `<div class="trait"><h4>${esc(r.title)}</h4><div class="lvl">${r.level === "strong" ? "All three systems agree" : r.level === "supported" ? "Two systems agree" : "One system emphasises this"}</div>${sysBars(r.per_system)}</div>`).join("")}</div>`).join("");
+    ${c.rows.slice(0, 5).map((r) => `<div class="trait"><h4>${esc(r.title)}</h4><div class="lvl">${r.level === "strong" ? "Three or more systems agree" : r.level === "supported" ? "Two systems agree" : "One system emphasises this"}</div>${sysBars(r.per_system)}</div>`).join("")}</div>`).join("");
   if (d.disagreements.length) html += `<div class="card tint-butter"><h3>Where your systems pull apart</h3><p class="small">These are not errors. They show different sides of you: one tradition emphasises a trait the other barely touches.</p>
     ${d.disagreements.map((x) => `<p><b>${esc(x.title)}</b>: strongest in ${x.high}, quiet in ${x.low}.</p>`).join("")}</div>`;
   html += `<div class="note">Bars show how strongly each system points to a theme compared with the average person (the full bar is about three times average). Scores come from ${d.signal_count} placements and numbers.</div>`;
@@ -421,7 +433,7 @@ async function runCompare() {
 function compareHtml(r) {
   const [a, b] = r.names;
   return `<div class="fade"><div class="card tint-lav"><h2>${esc(a)} & ${esc(b)} · ${esc(r.relation_label)}</h2>
-    <div class="score"><div class="ring" style="--p:${r.overall}"><span>${r.overall}</span></div><div><b>${esc(r.summary)}</b><p class="small muted" style="margin:.3em 0 0">A blend of four independent views. It is a conversation starter, not a verdict.</p></div></div></div>
+    <div class="score"><div class="ring" style="--p:${r.overall}"><span>${r.overall}</span></div><div><b>${esc(r.summary)}</b><p class="small muted" style="margin:.3em 0 0">A blend of five independent views. It is a conversation starter, not a verdict.</p></div></div></div>
     <div class="card"><h3>How each method sees it</h3>${r.methods.map((m) => `<div><b>${esc(m.name)}</b> <span class="muted">${m.score}/100</span><div class="meter"><i style="width:${m.score}%"></i></div><p class="hint" style="margin-top:-4px">${esc(m.how)}</p></div>`).join("")}
       ${r.friction_systems.map((x) => `<div class="note">${esc(x)}</div>`).join("")}</div>
     <div class="card"><h3>Dimension by dimension</h3>${r.dimensions.map((x) => `<div><b>${esc(x.title)}</b> <span class="muted">${x.score}</span><div class="meter"><i style="width:${x.score}%"></i></div><p class="small">${esc(x.text)}</p></div>`).join("")}</div>
@@ -431,9 +443,11 @@ function compareHtml(r) {
     <div class="card"><h3>Vedic Guna Milan: ${r.ashtakoota.total}/36</h3><p class="small muted">${esc(a)}: ${esc(r.ashtakoota.moon_a)} · ${esc(b)}: ${esc(r.ashtakoota.moon_b)}</p>
       <div class="scroll-x"><table><tr><th>Koota</th><th>Score</th><th>Meaning</th></tr>${r.ashtakoota.kootas.map((k) => `<tr><td>${k.name}</td><td>${k.score}/${k.max}</td><td>${esc(k.meaning)}</td></tr>`).join("")}</table></div></div>
     <div class="card"><h3>Numerology</h3>${r.numerology_notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>
+    <div class="card"><h3>Chinese BaZi</h3>${r.bazi_notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>
     <div class="card tint-butter"><h3>Making it work</h3><ul>${r.tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div></div>`;
 }
 
 if (!location.hash) location.hash = "#/";
 fetch("/api/health").catch(() => {});
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 route();

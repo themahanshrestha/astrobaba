@@ -12,10 +12,10 @@ from content.vedic import NAKSHATRA_INFO
 from . import astro as A
 
 DOMAINS = ["character", "career", "relationships", "inner", "mind"]
-SYSTEMS = ["western", "vedic", "numerology"]
+SYSTEMS = ["western", "vedic", "numerology", "bazi"]
 PRIOR = 8.0
 SUPPORT = 1.4
-SYSTEM_WEIGHT = {"western": 1.0, "vedic": 1.0, "numerology": 1.0}
+SYSTEM_WEIGHT = {"western": 1.0, "vedic": 1.0, "numerology": 1.0, "bazi": 1.0}
 
 SIGN_VEC = {
     "Aries": {"initiative": 1.0, "radiance": .3},
@@ -71,7 +71,38 @@ N_WEIGHTS = {
     "expression_chaldean": _w(1.2, 1.5, .4, .2, .7),
 }
 
-ABBR = {"western": "Western", "vedic": "Vedic", "numerology": "Numerology"}
+DM_VEC = {
+    "Yang Wood": {"initiative": .6, "discipline": .4, "steadiness": .3},
+    "Yin Wood": {"harmony": .6, "curiosity": .3, "empathy": .3},
+    "Yang Fire": {"radiance": 1.0, "exploration": .3},
+    "Yin Fire": {"empathy": .5, "introspection": .4, "precision": .3},
+    "Yang Earth": {"steadiness": 1.0, "discipline": .3},
+    "Yin Earth": {"empathy": .5, "precision": .4, "steadiness": .3},
+    "Yang Metal": {"initiative": .5, "discipline": .5, "intensity": .3},
+    "Yin Metal": {"precision": .6, "harmony": .3, "radiance": .3},
+    "Yang Water": {"exploration": .6, "originality": .4, "curiosity": .4},
+    "Yin Water": {"imagination": .6, "introspection": .5, "empathy": .3},
+}
+ANIMAL_VEC = {
+    "Rat": {"curiosity": .6, "precision": .3}, "Ox": {"steadiness": .8, "discipline": .5},
+    "Tiger": {"initiative": .7, "intensity": .4}, "Rabbit": {"harmony": .7, "empathy": .4},
+    "Dragon": {"radiance": .6, "initiative": .4, "originality": .3}, "Snake": {"introspection": .6, "intensity": .5},
+    "Horse": {"exploration": .6, "radiance": .4}, "Goat": {"imagination": .6, "empathy": .5},
+    "Monkey": {"curiosity": .6, "originality": .5}, "Rooster": {"precision": .7, "radiance": .3},
+    "Dog": {"empathy": .4, "discipline": .4, "steadiness": .4}, "Pig": {"empathy": .5, "exploration": .3, "harmony": .3},
+}
+ELEMENT_VEC = {
+    "Wood": {"initiative": .5, "exploration": .4}, "Fire": {"radiance": .6, "initiative": .3},
+    "Earth": {"steadiness": .6, "harmony": .3}, "Metal": {"discipline": .5, "precision": .5},
+    "Water": {"imagination": .4, "introspection": .4, "curiosity": .3},
+}
+B_WEIGHTS = {
+    "day_master": _w(3, 1.5, 1, 1.5, .5), "year_animal": _w(1.2, .5, 1.5, .5, .3),
+    "month_animal": _w(1.5, 2.5, .5, .3, .5), "hour_animal": _w(1, .3, .8, 1.5, .2),
+    "element": _w(1.5, .5, .3, .8, .3),
+}
+
+ABBR = {"western": "Western", "vedic": "Vedic", "numerology": "Numerology", "bazi": "Chinese BaZi"}
 
 
 def _sign_signals(system, body, label, dist, weights, tag, needs_time=False, dignity=None):

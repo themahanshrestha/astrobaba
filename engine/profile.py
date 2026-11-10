@@ -10,8 +10,14 @@ import datetime as dt
 from collections import Counter
 from dataclasses import dataclass
 
+from zoneinfo import ZoneInfo
+
+import swisseph as swe
+
 from . import astro as A
+from . import bazi as BZ
 from . import numerology as N
+from . import timing as T
 
 
 @dataclass
@@ -173,6 +179,57 @@ def build(b: Birth, today: dt.date | None = None) -> dict:
 
     num = N.compute(b.name, b.date, today, b.current_name) if b.name.strip() else N.compute("", b.date, today)
 
+    # ---- BaZi: pillars over the plausible window ---------------------------------------
+    tz = ZoneInfo(b.tz)
+    with_hour = b.time_mode == "exact"
+    pil_counts = {k: Counter() for k in ("year", "month", "day")}
+    pil_obj: dict = {}
+    for utc, wt in samples:
+        sun = A._calc(A.jd_ut(utc), swe.SUN, A.F_TROP)[0]
+        loc = utc.astimezone(tz).replace(tzinfo=None)
+        pl = BZ.pillars(sun, loc, with_hour)
+        for k in pil_counts:
+            key = (pl[k]["stem"], pl[k]["branch"])
+            pil_counts[k][key] += wt
+            pil_obj[(k,) + key] = pl[k]
+        if with_hour:
+            pil_obj["hour"] = pl["hour"]
+    modal = {k: pil_obj[(k,) + pil_counts[k].most_common(1)[0][0]] for k in pil_counts}
+    modal["hour"] = pil_obj.get("hour")
+    tot = {k: sum(pil_counts[k].values()) for k in pil_counts}
+    bz_dist = {
+        "day_master": _dist([(f"{pil_obj[(k_,)+key]['polarity']} {pil_obj[(k_,)+key]['stem_el']}", v) for k_ in ("day",) for key, v in pil_counts[k_].items()]),
+        "year_animal": _dist([(pil_obj[("year",) + key]["animal"], v) for key, v in pil_counts["year"].items()]),
+        "month_animal": _dist([(pil_obj[("month",) + key]["animal"], v) for key, v in pil_counts["month"].items()]),
+        "hour_animal": {modal["hour"]["animal"]: 1.0} if modal["hour"] else {},
+    }
+    bz_notes = [f"Your Chinese {k} pillar could be {' or '.join(f'{a} {b_} ({int(v/tot[k]*100)}%)' for (a, b_), v in pil_counts[k].most_common())}."
+                for k in pil_counts if len(pil_counts[k]) > 1]
+    notes += bz_notes
+    bazi_out = {**BZ.public(modal), "dist": bz_dist}
+
+    # ---- timing techniques ----------------------------------------------------------------
+    asc_for_timing = None
+    if dist["w"].get("asc"):
+        top_asc, top_p = max(dist["w"]["asc"].items(), key=lambda kv: kv[1])
+        asc_for_timing = top_asc if top_p >= 0.6 else None
+    natal_sun = ref_w["planets"]["Sun"]["lon"]
+    timing = T.compute(b.date, ref_jd, natal_sun, asc_for_timing, b.lat, b.lon, today, houses_ok)
+
+    # ---- birth-time helper: Rising sign across the plausible window ----------------------------
+    timeline = []
+    if b.time_mode != "exact":
+        pts = samples if b.time_mode == "approx" else [(A.to_utc(b.date, h, 0, b.tz), 0) for h in range(24)]
+        for utc, _ in pts:
+            jd = A.jd_ut(utc)
+            ww = A.western(jd, b.lat, b.lon, True)["asc"]["sign"]
+            vv = A.vedic(jd, b.lat, b.lon, True)["lagna"]["sign"]
+            lt = utc.astimezone(tz).strftime("%H:%M")
+            if timeline and timeline[-1]["western"] == ww and timeline[-1]["vedic"] == vv:
+                timeline[-1]["to"] = lt
+            else:
+                timeline.append({"from": lt, "to": lt, "western": ww, "vedic": vv})
+
     return {
         "meta": {"name": b.name, "date": b.date.isoformat(), "time_mode": b.time_mode,
                  "time": f"{b.hour:02d}:{b.minute:02d}" if b.time_mode != "unknown" else None,
@@ -185,6 +242,9 @@ def build(b: Birth, today: dt.date | None = None) -> dict:
         "numerology": num,
         "dist": dist,
         "dasha": _dasha_out(periods, cur, b, dist, now),
+        "bazi": bazi_out,
+        "timing": timing,
+        "rising_timeline": timeline,
         "notes": notes,
     }
 
