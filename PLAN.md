@@ -1,6 +1,6 @@
 # AstroBaba — Product & Technical Plan (v0.1, pre-build)
 
-Status: DRAFT for review. No code written yet. Open questions are in section 14; defaults are marked **[DEFAULT]** and will be used if unanswered.
+Status: v0.2. Owner decisions are recorded in section 15; the Phase 1-4 MVP is built (see section 15). Section 14 questions are now answered.
 
 ---
 
@@ -82,7 +82,8 @@ Signal {
 - Per-system weights are configurable (user can choose "I trust Vedic more" profiles, and the default weights are a documented, versioned config — not hidden magic).
 - Rule engine (not ML) decides *what is true about the chart*; this keeps outputs deterministic and testable.
 
-### 3.4 Narration
+### 3.4 Narration (UPDATED: no LLM, per owner decision)
+- **Superseded:** readings are composed from the curated library by rules only; no model writes text. The paragraph below describes the original LLM idea and is kept for reference.
 - Curated **interpretation library** (written/licensed, versioned, ~5–8k snippets at v1: planet×sign, planet×house, nakshatra×planet, numbers 1–33, yogas, dashas, aspects).
 - LLM composes the report **only from selected signals + snippets**, in a chosen tone (warm / direct / practical). Guard-checker pass: every claim in the generated text must map back to a signal id; unmapped claims are removed. Banned-topic filter runs last.
 - Output is cached by (chart hash, report type, tone, KB version).
@@ -252,3 +253,37 @@ Web app, English, one user + partner profile, Tier-1 systems only, 4 reports (Co
 10. **Budget**: Okay with Swiss Ephemeris commercial licence if you monetize, and API/hosting costs?
 11. **Birth data**: Will many users not know their birth time? (decides how early to build rectification)
 12. **Tooling preference**: Happy with Python + Next.js, or do you have a stack/hosting you must use?
+
+---
+
+## 15. Decisions & build status (v0.2)
+
+### Owner decisions
+| # | Decision | Effect on the build |
+|---|---|---|
+| 1 | Audience: everyone, especially people who tried several approaches without learning about themselves | Plain language, self-discovery framing, every statement explainable ("Why this?") |
+| 2 | Personal project now, maybe public/monetised later | Swiss Ephemeris used under AGPL for now; **a commercial licence is required before closed-source/commercial release** |
+| 3 | Western + Vedic + numerology all included | Three systems vote with equal weight; differences are shown, not hidden |
+| 4 | No narration: people read the answers | **No LLM.** Reports are rule-assembled from an original, curated text library; deterministic and testable |
+| 5 | Focus: character, strengths, watch-outs, then career, hobbies, relationships (incl. what to look for in a partner) | Dedicated sections, plus additions: inner world, mind/communication, stress & recovery, growth/life lessons, current season (timing), numerology and charts pages |
+| 6 | No remedies (gemstones, pujas, mantras) | Not built; Sade Sati phrased as a season, not a warning |
+| 7 | Compatibility for romantic, business, family and friends | Relationship type changes factor weights and tips |
+| 8 | English only | i18n not built yet; all text lives in `content/` so translation is possible later |
+| 9 | Mobile-first responsive web now, native app later; pastel palette, elegant fonts | Dependency-free PWA-style front end (Cormorant Garamond + Jost); the same API can back a React Native/Capacitor app |
+| 10 | Birth time may be exact, approximate or unknown | Time-sensitive facts are computed across the plausible window and weighted by probability; unknown time omits Rising/Lagna/houses and says so |
+
+### Built (Phases 1-4 of the roadmap, plus part of 5)
+- Calculation core (Swiss Ephemeris): tropical planets, true node, Placidus houses (Porphyry fallback at polar latitudes); sidereal Lahiri planets, mean Rahu/Ketu, Lagna, whole-sign houses, 27 nakshatras with padas, Navamsa, Dasamsa, Vimshottari Maha/Antar, a few yogas, Sade Sati.
+- Numerology: Pythagorean and Chaldean, Life Path, Expression, Soul Urge, Personality, Birthday, Maturity, karmic debts, master numbers, Personal Year/Month/Day, pinnacles and challenges, missing numbers, current-name comparison.
+- Synthesis: 13-trait vocabulary, per-system normalisation with evidence shrinkage and population calibration, agreement levels, tension pairs, system disagreements.
+- Reports: 11 narrative sections plus Numbers, Charts and Agreement pages.
+- Compatibility: Western synastry by dimension, Ashtakoota (36 points, modernised gender-neutral), numerology resonance, trait overlap/complement/friction, tips by relationship type.
+- 33 automated tests (astronomy cross-checked against independent sources, numerology, time handling, content completeness, API).
+
+### Not built yet / known limits
+- Chiron, Lilith, asteroids; secondary progressions and solar returns; Hellenistic profections; BaZi; astrocartography; more divisional charts; Shadbala/Ashtakavarga.
+- Birth-time rectification assistant (approximate/unknown handling exists; guided rectification does not).
+- Accounts, server-side storage and PDF export (profiles are stored in the browser only).
+- Ashtakoota Varna/Vashya use simplified gender-neutral rules and the Yoni matrix was entered from memory of the standard table: **verify against a trusted reference before treating Guna Milan as authoritative.**
+- Ephemeris runs on the built-in Moshier model (sub-arcminute). Set `ASTROBABA_EPHE_PATH` to Swiss Ephemeris files for full precision.
+- Interpretation text is original and concise (about 9,000 words); expanding depth per placement is the main way to improve the product.
