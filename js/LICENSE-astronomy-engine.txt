@@ -1,0 +1,4 @@
+astronomy.min.js and astronomy_node.js are astronomy-engine by Don Cross, MIT licence.
+https://github.com/cosinekitty/astronomy
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software to deal in it
+without restriction, subject to the copyright notice and this permission notice being included in all copies.

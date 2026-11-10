@@ -307,3 +307,15 @@ Web app, English, one user + partner profile, Tier-1 systems only, 4 reports (Co
 | Human Design, Gene Keys, Mayan, Celtic, Tarot birth cards | Tier 3 / experimental; weakest traditional basis and they would dilute the cross-system agreement signal |
 | Accounts, server-side storage | Profiles are browser-only by design (privacy); add with proper auth, encryption and a data-deletion flow before going public |
 | Guided rectification from life events | The helper timeline exists; event-based rectification needs a validated method |
+
+### v0.4: runs entirely in the browser
+- The engine was ported to JavaScript (`js/`), so the app needs no server and works offline or online.
+  Planets come from astronomy-engine (MIT); Placidus houses, ayanamsa and nodes are implemented in `js/ephem.js`.
+  Accuracy against Swiss Ephemeris on 60 random times: planets within 0.005 degrees, Ascendant/MC/cusps within 0.0001, true node within 0.01.
+- Python remains the reference implementation. `tests/test_js_engine.py` runs both on the same inputs and requires identical
+  readings (ignoring near-tie aspect order and dasha dates that differ by a day).
+- **Bug fixed:** the BaZi scoring added in v0.3 was never connected, so BaZi did not influence the trait scores until now.
+  A test now guards it. Trait ranking also became deterministic (unrounded score, then fixed trait order).
+- Hosting is now a drag-and-drop of `site/` (Netlify Drop, Cloudflare Pages, GitHub Pages). The Python hosting options
+  are kept in `DEPLOY.md` but are no longer needed.
+- Known limits: Safari not tested here (Chromium only); dasha dates can differ by a day from the Swiss-based engine.

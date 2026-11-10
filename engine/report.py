@@ -137,7 +137,7 @@ def build_report(prof: dict, synth: dict) -> dict:
     # ---------- overview ------------------------------------------------------
     blocks = []
     blocks.append(_block("Your defining themes", items=[_trait_chip(r) for r in ch[:3]], kind="traits",
-                         src=["Weighted combination of Western, Vedic and numerology placements (see 'Where your systems agree')"]))
+                         src=["Weighted combination of Western, Vedic, numerology and Chinese BaZi (see 'Where your systems agree')"]))
     blocks.append(_sign_view("Your core self (Sun)", "sun", *_planet_dists(prof, "Sun"), "Sun", "Sun"))
     lp = n["life_path"]["number"]
     blocks.append(_block("Your life path", src=[f"Life Path {lp} · Numerology"],
@@ -180,7 +180,7 @@ def build_report(prof: dict, synth: dict) -> dict:
 
     # ---------- watch-outs ------------------------------------------------------
     blocks = [_trait_block(r, "watch", f"{TRAITS[r['trait']]['title']}: the shadow side") for r in ch]
-    strong = {r["trait"] for r in synth["domains"]["character"] if r["score"] >= 1.15}
+    strong = {r["trait"] for r in synth["domains"]["character"] if r["_raw"] >= 1.15}
     for (a, b), text in TENSIONS.items():
         if a in strong and b in strong:
             blocks.append(_block("An inner tension", text=text,
@@ -293,7 +293,7 @@ def build_report(prof: dict, synth: dict) -> dict:
         blocks.append(_sign_view("Who you tend to be drawn to", "partner", dsc, h7, "Descendant", "7th house", time=True))
     seek = [{"label": TRAITS[r["trait"]]["title"], "text": TRAITS[r["trait"]]["seek"]} for r in rel]
     blocks.append(_block("What to look for in a partner", items=seek, kind="list",
-                         src=["Derived from your relationship traits across all three systems"]))
+                         src=["Derived from your relationship traits across all four systems"]))
     comp = S.lowest(synth, "relationships", 2)
     blocks.append(_block("Someone who complements you", kind="list", src=["Your least-emphasised relationship traits"],
                          items=[{"label": TRAITS[r["trait"]]["name"],

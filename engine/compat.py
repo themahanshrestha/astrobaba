@@ -236,8 +236,8 @@ def numerology_resonance(a: dict, b: dict) -> dict:
 
 # ----- traits ---------------------------------------------------------------------------------
 def trait_compare(sa: dict, sb: dict, domain: str = "character") -> dict:
-    ra = {r["trait"]: r["score"] for r in sa["domains"][domain]}
-    rb = {r["trait"]: r["score"] for r in sb["domains"][domain]}
+    ra = {r["trait"]: r["_raw"] for r in sa["domains"][domain]}
+    rb = {r["trait"]: r["_raw"] for r in sb["domains"][domain]}
     shared = sorted([t for t in ra if ra[t] >= 1.3 and rb[t] >= 1.3], key=lambda t: -(ra[t] + rb[t]))
     comp_a = sorted([t for t in ra if ra[t] >= 1.4 and rb[t] <= 0.8], key=lambda t: -(ra[t] - rb[t]))
     comp_b = sorted([t for t in rb if rb[t] >= 1.4 and ra[t] <= 0.8], key=lambda t: -(rb[t] - ra[t]))

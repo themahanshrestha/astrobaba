@@ -163,6 +163,23 @@ def collect_signals(prof: dict) -> list[dict]:
         c = n.get("chaldean")
         if c and c["expression"] != p["expression"]:
             num("expression_chaldean", c["expression"], "Expression (Chaldean)", N_WEIGHTS["expression_chaldean"])
+    bz = prof.get("bazi")
+    if bz:
+        d = bz["dist"]
+        for key, label, vec, dd in (("day_master", "Day Master", DM_VEC, d["day_master"]),
+                                    ("year_animal", "Year animal", ANIMAL_VEC, d["year_animal"]),
+                                    ("month_animal", "Month animal", ANIMAL_VEC, d["month_animal"]),
+                                    ("hour_animal", "Hour animal", ANIMAL_VEC, d["hour_animal"])):
+            for k, pr in dd.items():
+                sig.append({"system": "bazi", "body": key, "key": k, "prob": pr, "vec": vec[k], "w": B_WEIGHTS[key],
+                            "needs_time": key == "hour_animal",
+                            "source": f"{label}: {k}" + (f" ({int(pr*100)}% likely)" if pr < .99 else "") + " · Chinese BaZi"})
+        tot = sum(bz["elements"].values()) or 1
+        for el, c in bz["elements"].items():
+            if c:
+                sig.append({"system": "bazi", "body": "element", "key": el, "prob": c / tot * 5 / 5, "vec": ELEMENT_VEC[el],
+                            "w": B_WEIGHTS["element"], "needs_time": False,
+                            "source": f"{el} element ({c:g} of {tot:g}) · Chinese BaZi"})
     return sig
 
 
@@ -211,23 +228,26 @@ def synthesize(prof: dict, calibrate: bool = True) -> dict:
             score = sum(per[s] * SYSTEM_WEIGHT[s] for s in SYSTEMS) / total_w
             supporters = [s for s in SYSTEMS if per[s] >= SUPPORT]
             ev = sorted(contrib.get((d, t), []), key=lambda x: -x[0])[:4]
-            rows.append({"trait": t, "score": round(score, 2), "per_system": per, "supporters": supporters,
+            rows.append({"trait": t, "score": round(score, 2), "_raw": score, "per_system": per, "supporters": supporters,
                          "level": ("strong" if len(supporters) >= 3 else "supported" if len(supporters) == 2
                                    else "single" if len(supporters) == 1 else "none"),
                          "evidence": [{"source": sg["source"], "system": sg["system"], "needs_time": sg["needs_time"]}
                                       for _, sg in ev]})
-        rows.sort(key=lambda r: -r["score"])
+        # rank on the unrounded score; exact ties (common, since per-system values are 2-dp) fall back to
+        # trait order, so the result is identical in every implementation
+        rows.sort(key=lambda r: (-round(r["_raw"], 6), idx[r["trait"]]))
         out[d] = rows
     return {"domains": out, "signal_count": len(signals), "_norm": norm}
 
 
 def top(synth: dict, domain: str, k: int = 3, min_score: float = 1.15) -> list[dict]:
-    rows = [r for r in synth["domains"][domain][:k] if r["score"] >= min_score]
+    rows = [r for r in synth["domains"][domain][:k] if r["_raw"] >= min_score]
     return rows or synth["domains"][domain][:1]
 
 
 def lowest(synth: dict, domain: str, k: int = 2) -> list[dict]:
-    return sorted(synth["domains"][domain], key=lambda r: r["score"])[:k]
+    order = {t: i for i, t in enumerate(TRAIT_KEYS)}
+    return sorted(synth["domains"][domain], key=lambda r: (round(r["_raw"], 6), order[r["trait"]]))[:k]
 
 
 def system_disagreements(synth: dict, domain: str = "character") -> list[dict]:

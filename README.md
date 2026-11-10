@@ -8,7 +8,12 @@ current timing, and compatibility for romantic, business, family and friendship 
 Reports are assembled by rules from an original text library. There is no AI-generated text and
 no remedies. See `PLAN.md` for the full plan and decisions.
 
-## Run it
+## Easiest: open the single file
+
+`dist/astrobaba-offline.html` (also `site/index.html`) is the complete app. Double-click it: no install, no
+server, works offline. Drag the `site` folder onto app.netlify.com/drop to get a public link.
+
+## Run the Python server (optional)
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
@@ -39,7 +44,9 @@ python -m pytest -q tests
 | `engine/compat.py` | Synastry, Ashtakoota, numerology and trait compatibility |
 | `content/` | All interpretive text (original). Edit here to change what people read |
 | `api/main.py` | FastAPI app (`/api/profile`, `/api/compare`, `/api/places`) and static hosting |
-| `web/` | Mobile-first responsive front end (no build step), installable PWA, print-to-PDF |
+| `web/` | Mobile-first responsive front end, installable PWA, print-to-PDF |
+| `js/` | The same engine in JavaScript so the app runs entirely in the browser (planets via astronomy-engine, MIT). Tested against the Python engine |
+| `site/` | Built single-file app, ready to host on any static host |
 
 ## How accuracy is handled
 

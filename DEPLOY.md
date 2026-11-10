@@ -1,5 +1,17 @@
 # Hosting AstroBaba
 
+## Recommended: a static page (no server, no card, no Python)
+
+AstroBaba now calculates everything in the browser, so `site/index.html` (or `dist/astrobaba-offline.html`)
+is the whole app in one file. It works offline and online.
+
+- **Just open it:** double-click `astrobaba-offline.html`. Nothing to install.
+- **Netlify (free, no card):** go to app.netlify.com/drop, sign in, and drag the `site` folder onto the page.
+  You get a `https://something.netlify.app` link in seconds. (Cloudflare Pages, GitHub Pages and Vercel also work.)
+- **Rebuild after changing content or code:** `python tools/build_js_data.py && python tools/build_offline.py`.
+
+The sections below describe the older Python-server options. They still work but are no longer needed.
+
 **Netlify alone cannot run this app.** The calculations need Python and a compiled astronomy
 library (Swiss Ephemeris); Netlify Functions run JavaScript/TypeScript/Go. So the backend goes on a
 Python host, and Netlify can optionally serve the front end in front of it.

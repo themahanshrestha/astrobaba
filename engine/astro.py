@@ -204,9 +204,12 @@ def find_aspects(items: dict[str, float], only_with: set[str] | None = None) -> 
                 o = orb + (1 if lum else 0) - (2 if (a in OUTER or b in OUTER or "Node" in a + b) else 0)
                 if abs(diff - ang) <= o:
                     res.append({"a": a, "b": b, "type": aname, "orb": round(abs(diff - ang), 2),
-                                "max": o})
+                                "max": o, "_ratio": abs(diff - ang) / o})
                     break
-    return sorted(res, key=lambda r: r["orb"] / r["max"])
+    res.sort(key=lambda r: (round(r["_ratio"], 6), r["a"], r["b"]))
+    for r in res:
+        del r["_ratio"]
+    return res
 
 
 # ---- Vimshottari -----------------------------------------------------------

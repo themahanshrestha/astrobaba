@@ -327,3 +327,10 @@ def test_compare_includes_bazi():
     assert abs(sum(compat.METHOD_WEIGHTS["romantic"].values()) - 1) < 1e-9
     for rel in compat.METHOD_WEIGHTS:
         assert abs(sum(compat.METHOD_WEIGHTS[rel].values()) - 1) < 1e-9
+
+
+def test_bazi_actually_contributes_to_scores():
+    s = synthesize(mk())
+    vals = [r["per_system"]["bazi"] for r in s["domains"]["character"]]
+    assert max(vals) - min(vals) > 0.5                       # not a flat 1.0 for every trait
+    assert any("Chinese BaZi" in e["source"] for r in s["domains"]["character"] for e in r["evidence"])

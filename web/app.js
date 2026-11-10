@@ -22,6 +22,15 @@ const cache = new Map();
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 async function api(path, body) {
+  // In-browser engine (works offline). Falls back to the Python API when the engine script is absent.
+  if (window.AstroEngine) {
+    await new Promise((r) => setTimeout(r, 30));   // let the "Reading the sky…" state paint before the heavy work
+    if (path === "/api/profile") return window.AstroEngine.profile(body);
+    if (path === "/api/compare") return window.AstroEngine.compare(body.a, body.b, body.relation);
+    if (path.startsWith("/api/places")) return { results: window.AstroEngine.places(decodeURIComponent(path.split("q=")[1] || "")) };
+    if (path.startsWith("/api/timezones")) { let z = []; try { z = Intl.supportedValuesOf("timeZone"); } catch { z = ["UTC"]; } return { timezones: z }; }
+    return { ok: true };
+  }
   const r = await fetch(path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : undefined);
   if (!r.ok) {
     let m = "Something went wrong.";
@@ -448,6 +457,6 @@ function compareHtml(r) {
 }
 
 if (!location.hash) location.hash = "#/";
-fetch("/api/health").catch(() => {});
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+if (!window.AstroEngine) fetch("/api/health").catch(() => {});
+if ("serviceWorker" in navigator && /^https?:/.test(location.protocol) && !window.__NO_SW) navigator.serviceWorker.register("/sw.js").catch(() => {});
 route();
