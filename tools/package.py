@@ -61,6 +61,17 @@ import uvicorn
 
 from api.main import app
 
+# ZeroGPU Spaces stop any app that registers no GPU function. AstroBaba needs no GPU; this empty
+# function only satisfies that startup check. On CPU Spaces the package is absent and this is skipped.
+try:
+    import spaces
+
+    @spaces.GPU
+    def _gpu_not_needed():
+        return None
+except Exception:
+    pass
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 7860)))
 """
