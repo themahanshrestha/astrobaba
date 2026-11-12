@@ -11,7 +11,7 @@ const EL_COLOR = { fire: "#fadde4", earth: "#dcf0e6", air: "#dcebf7", water: "#e
 const EL = ["fire", "earth", "air", "water"];
 const DASHA_COLOR = { Sun: "#fde6d5", Moon: "#dcebf7", Mars: "#fadde4", Rahu: "#e7dff5", Jupiter: "#fbf1cc", Saturn: "#dcebf7", Mercury: "#dcf0e6", Ketu: "#e7dff5", Venus: "#fadde4" };
 const TINTS = ["lav", "blush", "mint", "peach", "sky", "butter"];
-const TAB_ICON = { overview: "☉", strengths: "✦", watchouts: "◈", inner: "☽", mind: "☿", career: "✧", hobbies: "❀", relationships: "♡", houses: "⌂", wellbeing: "❁", purpose: "➶", timing: "◷", bazi: "☯", numbers: "№", charts: "◎", agreement: "⚖" };
+const TAB_ICON = { overview: "☉", insights: "✺", strengths: "✦", watchouts: "◈", inner: "☽", mind: "☿", career: "✧", hobbies: "❀", relationships: "♡", houses: "⌂", wellbeing: "❁", purpose: "➶", timing: "◷", bazi: "☯", numbers: "№", charts: "◎", agreement: "⚖" };
 
 /* ---------- storage ---------- */
 const KEY = "astrobaba.profiles.v1";
@@ -232,7 +232,7 @@ function summaryOf(d) {
 }
 
 /* ---------- profile ---------- */
-const TAB_ORDER = ["overview", "strengths", "watchouts", "inner", "mind", "career", "hobbies", "relationships", "houses", "wellbeing", "purpose", "timing", "bazi", "numbers", "charts", "agreement"];
+const TAB_ORDER = ["overview", "insights", "strengths", "watchouts", "inner", "mind", "career", "hobbies", "relationships", "houses", "wellbeing", "purpose", "timing", "bazi", "numbers", "charts", "agreement"];
 let currentProfile = null;
 async function viewProfile(id, tab = "overview") {
   const p = profiles.find((x) => x.id === id);
@@ -259,7 +259,8 @@ async function viewProfile(id, tab = "overview") {
       ${sn("Rising · Western", snap.rising_western ? g(snap.rising_western.sign) + maybe(snap.rising_western) : "needs time", "", "blush")}
       ${sn("Moon · Vedic", g(snap.moon_vedic.sign), snap.moon_vedic.nakshatra + " · pada " + snap.moon_vedic.pada, "peach")}
       ${sn("Lagna · Vedic", snap.lagna_vedic ? g(snap.lagna_vedic.sign) + maybe(snap.lagna_vedic) : "needs time", "", "butter")}
-      ${sn("Life Path", snap.life_path, "", "mint")}
+      ${sn("Mulank", snap.mulank ?? "–", "root number", "mint")}
+      ${sn("Life Path", snap.life_path, "", "sky")}
     </div>
     ${quizBanner(p)}
     ${notes.length ? `<div class="banner"><b>About your birth data</b><ul>${notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul></div>` : ""}
@@ -373,7 +374,11 @@ function numbersPanel(d) {
   const sys = n.pythagorean ? ["pythagorean", "chaldean"] : [];
   const cell = (lab, v, tint) => v == null ? "" : `<div class="num" style="background:var(--${tint})"><b>${v}</b><small>${lab}</small><small>${esc(ni[v]?.title || "")}</small></div>`;
   const P = n.pythagorean, C = n.chaldean;
-  let html = `<div class="card"><h3>Core numbers (Pythagorean)</h3><div class="numgrid">
+  const pl = { 1: "Sun", 2: "Moon", 3: "Jupiter", 4: "Rahu", 5: "Mercury", 6: "Venus", 7: "Ketu", 8: "Saturn", 9: "Mars" };
+  const ind = (lab, v, tint) => v == null ? "" : `<div class="num" style="background:var(--${tint})"><b>${v}</b><small>${lab}</small><small>${pl[v]} · ${esc(ni[v]?.title || "")}</small></div>`;
+  let html = `<div class="card"><h3>Indian numerology</h3><div class="numgrid">${ind("Mulank (birth day)", n.mulank?.number, "peach")}${ind("Bhagyank (whole date)", n.bhagyank?.number, "butter")}${ind("Namank (name, Chaldean)", n.namank?.number, "blush")}</div>
+    <p class="hint">Mulank is your birth day reduced to one digit. Bhagyank is every digit of your birth date added down to one digit. Namank is your name in the Chaldean system. Each digit is ruled by a planet.</p></div>`;
+  html += `<div class="card"><h3>Core numbers (Pythagorean)</h3><div class="numgrid">
     ${cell("Life Path", n.life_path.number, "mint")}${cell("Expression", P?.expression, "lav")}${cell("Soul Urge", P?.soul_urge, "blush")}
     ${cell("Personality", P?.personality, "sky")}${cell("Birthday", n.birthday, "peach")}${cell("Maturity", n.maturity, "butter")}</div>
     <p class="hint">Master numbers 11, 22 and 33 are kept unreduced. Y counts as a vowel only when a name has no other vowel.</p></div>`;

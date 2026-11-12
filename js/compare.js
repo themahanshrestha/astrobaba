@@ -2,7 +2,7 @@
 //   node js/compare.js python_dump.json inputs.json 2026-11-10
 const fs = require("fs");
 globalThis.Astronomy = require("./astronomy_node.js");
-for (const f of ["data", "ephem", "engine", "profile", "simplify", "quiz", "report", "compat", "api"]) { try { require("./" + f + ".js"); } catch (e) { if (e.code !== "MODULE_NOT_FOUND") throw e; } }
+for (const f of ["data", "ephem", "engine", "profile", "simplify", "enrich", "quiz", "report", "compat", "api"]) { try { require("./" + f + ".js"); } catch (e) { if (e.code !== "MODULE_NOT_FOUND") throw e; } }
 const AB = globalThis.AB;
 const [dumpFile, inputFile, todayStr] = process.argv.slice(2);
 const dump = JSON.parse(fs.readFileSync(dumpFile, "utf8")), inputs = JSON.parse(fs.readFileSync(inputFile, "utf8"));

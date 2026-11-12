@@ -15,7 +15,8 @@ DOMAINS = ["character", "career", "relationships", "inner", "mind"]
 SYSTEMS = ["western", "vedic", "numerology", "bazi"]
 PRIOR = 8.0
 SUPPORT = 1.4
-SYSTEM_WEIGHT = {"western": 1.0, "vedic": 1.0, "numerology": 1.0, "bazi": 1.0}
+# numerology counts more because the app owner and many users weight it heavily; change here to rebalance
+SYSTEM_WEIGHT = {"western": 1.0, "vedic": 1.0, "numerology": 1.5, "bazi": 1.0}
 
 SIGN_VEC = {
     "Aries": {"initiative": 1.0, "radiance": .3},
@@ -69,6 +70,8 @@ N_WEIGHTS = {
     "soul_urge": _w(1.5, .6, 2.5, 3, .3), "personality": _w(1, .8, 1, .3, .3),
     "birthday": _w(1, .5, .3, .3, .2), "maturity": _w(.7, 1, .3, .3, .2),
     "expression_chaldean": _w(1.2, 1.5, .4, .2, .7),
+    # Indian numerology
+    "mulank": _w(3, 1.5, 1.5, 2, .5), "bhagyank": _w(2, 2.5, 1, .5, .5), "namank": _w(1.2, 1.5, .5, .2, 1),
 }
 
 DM_VEC = {
@@ -153,6 +156,10 @@ def collect_signals(prof: dict) -> list[dict]:
             sig.append({"system": "numerology", "body": key, "key": value, "prob": 1.0, "vec": NUM_VEC[value],
                         "w": weights, "needs_time": False, "source": f"{label} {value} · Numerology"})
     num("life_path", n["life_path"]["number"], "Life Path", N_WEIGHTS["life_path"])
+    num("mulank", n["mulank"]["number"], "Mulank", N_WEIGHTS["mulank"])
+    num("bhagyank", n["bhagyank"]["number"], "Bhagyank", N_WEIGHTS["bhagyank"])
+    if "namank" in n:
+        num("namank", n["namank"]["number"], "Namank", N_WEIGHTS["namank"])
     num("birthday", n["birthday"], "Birthday number", N_WEIGHTS["birthday"])
     if "pythagorean" in n:
         p = n["pythagorean"]

@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-JS = ["astronomy.min.js", "data.js", "ephem.js", "engine.js", "profile.js", "simplify.js", "quiz.js", "report.js", "compat.js", "api.js"]
+JS = ["astronomy.min.js", "data.js", "ephem.js", "engine.js", "profile.js", "simplify.js", "enrich.js", "quiz.js", "report.js", "compat.js", "api.js"]
 
 
 def read(p):

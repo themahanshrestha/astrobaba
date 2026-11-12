@@ -325,3 +325,12 @@ Web app, English, one user + partner profile, Tier-1 systems only, 4 reports (Co
   statements nudge the ranking; a Twin view in Compare shows what twins share (the sky) and where they differ (names, Rising
   degree, answers). Same name + same chart + opposite answers gives different readings (js/test_self.js).
 - Honest limit: this does not make the chart distinguish twins. The answers do. These features live in the JS app only.
+
+### v0.6: one combined analysis, with Indian numerology
+- Added Mulank (birth day, one digit), Bhagyank (whole date, one digit) and Namank (name, Chaldean, one digit), each ruled by a planet
+  (1 Sun, 2 Moon, 3 Jupiter, 4 Rahu, 5 Mercury, 6 Venus, 7 Ketu, 8 Saturn, 9 Mars). They vote in the scoring; numerology now counts 1.5x.
+- "Your full picture" merges all four systems into seven short paragraphs; Western and Vedic readings of the same placement are one text.
+- Numerology lines now appear in every section; new "More insights" tab (outside vs inside, superpower, blind spot, one thing to build,
+  friends and family, money, next year, three things to try this month).
+- Not included: a Mulank/Bhagyank friend-and-enemy-number table. Sources disagree, so only planet friendships (where both planets
+  are in the standard seven) are used.

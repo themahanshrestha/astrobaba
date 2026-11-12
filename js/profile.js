@@ -196,6 +196,9 @@
       if (S.NUM_VEC[value]) sig.push({ system: "numerology", body: key, key: value, prob: 1, vec: S.NUM_VEC[value], w: weights, needs_time: false, source: `${label} ${value} · Numerology` });
     };
     num("life_path", n.life_path.number, "Life Path", S.N_WEIGHTS.life_path);
+    num("mulank", n.mulank.number, "Mulank", S.N_WEIGHTS.mulank);
+    num("bhagyank", n.bhagyank.number, "Bhagyank", S.N_WEIGHTS.bhagyank);
+    if (n.namank) num("namank", n.namank.number, "Namank", S.N_WEIGHTS.namank);
     num("birthday", n.birthday, "Birthday number", S.N_WEIGHTS.birthday);
     if (n.pythagorean) {
       const p = n.pythagorean;

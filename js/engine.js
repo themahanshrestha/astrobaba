@@ -214,11 +214,14 @@
   function numerology(birthName, c, today, currentName) {
     const lp = lifePath(c);
     const out = { life_path: lp, birthday: reduceNum(c.d), birthday_raw: c.d, personal: personalYear(c, today), cycles: pinnacles(c, lp.number) };
+    out.mulank = { number: reduceNum(c.d, false) };
+    out.bhagyank = { number: reduceNum(digitSum(parseInt(`${c.d}${c.m}${c.y}`, 10)), false) };
     const hasName = cleanName(birthName).trim() !== "";
     if (hasName) for (const [key, table] of [["pythagorean", PYTH], ["chaldean", CHALDEAN]]) {
       const nn = nameNumbers(birthName, table), exp = pack(nn.total);
       out[key] = { expression: exp.number, expression_raw: nn.total, karmic: exp.karmic, soul_urge: reduceNum(nn.vowels), personality: reduceNum(nn.consonants), counts: nn.counts };
     }
+    if (out.chaldean) out.namank = { number: reduceNum(out.chaldean.expression_raw, false) };
     if (out.pythagorean) {
       const p = out.pythagorean;
       out.maturity = reduceNum(lp.number + p.expression, true);

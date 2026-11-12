@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from content import extra, misc, numbers, signs, traits, vedic  # noqa: E402
+from content import extra, misc, numbers, numbers_extra, signs, traits, vedic  # noqa: E402
 from engine import astro, compat, places, synthesis as S  # noqa: E402
 
 
@@ -38,6 +38,8 @@ D = {
                "VARNA_RANK": compat.VARNA_RANK, "VASHYA": compat.VASHYA, "VAL": compat.VAL},
     "ASTRO": {"NAKSHATRAS": astro.NAKSHATRAS, "DASHA_ORDER": astro.DASHA_ORDER, "DASHA_YEARS": astro.DASHA_YEARS,
               "DOMICILE": astro.DOMICILE, "EXALT": astro.EXALT},
+    "NUMBER_EXTRA": numbers_extra.NUMBER_EXTRA, "MULANK_PLANET": numbers_extra.MULANK_PLANET, "PLANET_THEME": numbers_extra.PLANET_THEME,
+    "INDIAN_INTRO": numbers_extra.INDIAN_INTRO, "RELATION_TEXT": numbers_extra.RELATION_TEXT,
     "PLACES": places.PLACES,
 }
 out = ROOT / "js" / "data.js"

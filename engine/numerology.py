@@ -101,6 +101,9 @@ def compute(birth_name: str, d: dt.date, today: dt.date, current_name: str | Non
     out = {"life_path": lp, "birthday": reduce_num(d.day),
            "birthday_raw": d.day, "personal": personal_year(d, today),
            "cycles": pinnacles(d, lp["number"])}
+    # Indian numerology: Mulank = birth day (one digit), Bhagyank = whole date (one digit), Namank = name, Chaldean (one digit)
+    out["mulank"] = {"number": reduce_num(d.day, False)}
+    out["bhagyank"] = {"number": reduce_num(sum(int(c) for c in f"{d.day}{d.month}{d.year}"), False)}
     for key, table in (("pythagorean", PYTH), ("chaldean", CHALDEAN)):
         if not clean_name(birth_name).strip():
             continue
@@ -109,6 +112,8 @@ def compute(birth_name: str, d: dt.date, today: dt.date, current_name: str | Non
         out[key] = {"expression": exp["number"], "expression_raw": nn["total"], "karmic": exp["karmic"],
                     "soul_urge": reduce_num(nn["vowels"]), "personality": reduce_num(nn["consonants"]),
                     "counts": nn["counts"]}
+    if "chaldean" in out:
+        out["namank"] = {"number": reduce_num(out["chaldean"]["expression_raw"], False)}
     if "pythagorean" in out:
         p = out["pythagorean"]
         mat = reduce_num(lp["number"] + p["expression"], True)

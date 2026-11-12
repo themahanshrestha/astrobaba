@@ -334,3 +334,20 @@ def test_bazi_actually_contributes_to_scores():
     vals = [r["per_system"]["bazi"] for r in s["domains"]["character"]]
     assert max(vals) - min(vals) > 0.5                       # not a flat 1.0 for every trait
     assert any("Chinese BaZi" in e["source"] for r in s["domains"]["character"] for e in r["evidence"])
+
+
+# ---- Indian numerology -----------------------------------------------------------------------------
+def test_mulank_bhagyank_namank():
+    n = N.compute("John Smith", dt.date(1990, 5, 17), TODAY)
+    assert n["mulank"]["number"] == 8                      # 1 + 7
+    assert n["bhagyank"]["number"] == 5                    # 1+7+5+1+9+9+0 = 32 -> 5
+    assert n["namank"]["number"] == 8                      # Chaldean 35 -> 8
+    assert N.compute("A", dt.date(1990, 5, 29), TODAY)["mulank"]["number"] == 2     # 29 -> 11 -> 2: Mulank is always one digit
+    assert N.compute("A", dt.date(1990, 5, 22), TODAY)["mulank"]["number"] == 4     # 22 -> 4
+    assert "namank" not in N.compute("", dt.date(1990, 5, 17), TODAY)
+
+
+def test_numerology_signals_include_indian_numbers():
+    from engine.synthesis import collect_signals
+    src = [x["source"] for x in collect_signals(mk())]
+    assert any(t.startswith("Mulank") for t in src) and any(t.startswith("Bhagyank") for t in src) and any(t.startswith("Namank") for t in src)

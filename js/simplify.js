@@ -50,12 +50,19 @@
           blocks = blocks.filter((b) => b.h !== "Jupiter now" && b.h !== "Saturn now").concat([merged]);
         }
       }
-      for (const b of blocks) if (b.kind === "views")
-        b.items = b.items.map((i) => (i.label.startsWith("Vedic") ? { label: i.label, text: "Key qualities: " + kw(i.label.split("·")[1].split("(")[0].trim()) + "." } : i));
+      for (const b of blocks) if (b.kind === "views") {
+        const signOf = (lab) => lab.split("·")[1].split("(")[0].trim();
+        const wi = b.items.filter((i) => i.label.startsWith("Western")), vi = b.items.filter((i) => i.label.startsWith("Vedic"));
+        if (wi.length === 1 && vi.length) {
+          const vs = vi.map((i) => signOf(i.label)).join(" or "), adds = vi.map((i) => kw(signOf(i.label))).join("; ");
+          b.text = `Western astrology places this in ${signOf(wi[0].label)} and Vedic in ${vs}. ` + firstSentences(wi[0].text, 2) + ` Vedic astrology adds: ${adds}.`;
+          b.kind = "text"; delete b.items;
+        } else b.items = b.items.map((i) => (i.label.startsWith("Vedic") ? { label: i.label, text: "Key qualities: " + kw(signOf(i.label)) + "." } : i));
+      }
       for (const b of blocks) if (ADV_STARTS.some((p) => b.h.startsWith(p)) || ADV_CONTAINS.some((c) => b.h.includes(c))) b.adv = true;
       s.blocks = blocks;
     }
     return report;
   }
-  root.AB.simplify = simplify;
+  root.AB.simplify = simplify; root.AB.firstSentences = firstSentences;
 })(typeof window !== "undefined" ? window : globalThis);

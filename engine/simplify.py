@@ -93,11 +93,21 @@ def simplify(report: dict, prof: dict) -> dict:
                 merged = {"h": "Jupiter and Saturn right now", "src": jup["src"] + sat["src"], "time": jup["time"] or sat["time"], "kind": "text",
                           "text": first_sentences(jup["text"]) + " " + first_sentences(sat["text"])}
                 blocks = [b for b in blocks if b["h"] not in ("Jupiter now", "Saturn now")] + [merged]
-        # shorten Vedic views: show only the key qualities, the full reading follows the Western sign
+        # one combined reading per placement: Western text, plus what Vedic astrology adds
         for b in blocks:
-            if b["kind"] == "views":
-                b["items"] = [({"label": i["label"], "text": "Key qualities: " + kw(i["label"].split("·")[1].split("(")[0].strip()) + "."}
-                               if i["label"].startswith("Vedic") else i) for i in b["items"]]
+            if b["kind"] != "views":
+                continue
+            sign_of = lambda lab: lab.split("·")[1].split("(")[0].strip()  # noqa: E731
+            wi = [i for i in b["items"] if i["label"].startswith("Western")]
+            vi = [i for i in b["items"] if i["label"].startswith("Vedic")]
+            if len(wi) == 1 and vi:
+                vs = " or ".join(sign_of(i["label"]) for i in vi)
+                adds = "; ".join(kw(sign_of(i["label"])) for i in vi)
+                b["text"] = f"Western astrology places this in {sign_of(wi[0]['label'])} and Vedic in {vs}. " + first_sentences(wi[0]["text"], 2) + f" Vedic astrology adds: {adds}."
+                b["kind"] = "text"
+                del b["items"]
+            else:
+                b["items"] = [({"label": i["label"], "text": "Key qualities: " + kw(sign_of(i["label"])) + "."} if i["label"].startswith("Vedic") else i) for i in b["items"]]
         for b in blocks:
             if b["h"].startswith(ADV_STARTS) or any(c in b["h"] for c in ADV_CONTAINS):
                 b["adv"] = True

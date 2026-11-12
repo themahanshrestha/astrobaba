@@ -133,6 +133,7 @@ def build_report(prof: dict, synth: dict) -> dict:
         "soul_urge": n.get("pythagorean", {}).get("soul_urge"),
         "personality": n.get("pythagorean", {}).get("personality"),
         "birthday": n["birthday"], "maturity": n.get("maturity"),
+        "mulank": n["mulank"]["number"], "bhagyank": n["bhagyank"]["number"], "namank": n.get("namank", {}).get("number"),
         "north_node": w["planets"]["North Node"]["sign"],
     }
 
@@ -427,5 +428,6 @@ def build_report(prof: dict, synth: dict) -> dict:
                          text="This is a simplified Four Pillars reading (main stems and branches; hidden stems and luck pillars are not used). The hour pillar uses clock time and the day changes at 11pm."))
     sections.append({"id": "bazi", "title": "Chinese Four Pillars", "icon": "yin", "blocks": blocks})
 
+    from .enrich import enrich
     from .simplify import simplify
-    return simplify({"snapshot": snap, "sections": sections, "disclaimer": DISCLAIMER}, prof)
+    return simplify(enrich({"snapshot": snap, "sections": sections, "disclaimer": DISCLAIMER}, prof, synth), prof)

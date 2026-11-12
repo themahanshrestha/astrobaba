@@ -60,7 +60,7 @@
     const snap = { sun_western: { sign: sunW, prob: sunWp }, moon_western: { sign: moonW, prob: moonWp }, rising_western: ascW ? { sign: ascW, prob: ascWp } : null,
       sun_vedic: { sign: sunV }, moon_vedic: { sign: moonV, nakshatra: nak, pada: v.planets.Moon.pada, prob: nakP }, lagna_vedic: lag ? { sign: lag, prob: lagP } : null,
       life_path: n.life_path.number, expression: py.expression ?? null, soul_urge: py.soul_urge ?? null, personality: py.personality ?? null,
-      birthday: n.birthday, maturity: n.maturity ?? null, north_node: w.planets["North Node"].sign };
+      birthday: n.birthday, maturity: n.maturity ?? null, mulank: n.mulank.number, bhagyank: n.bhagyank.number, namank: n.namank ? n.namank.number : null, north_node: w.planets["North Node"].sign };
 
     // overview
     let blocks = [block("Your defining themes", { items: ch.slice(0, 3).map(traitChip), kind: "traits", src: ["Weighted combination of Western, Vedic, numerology and Chinese BaZi (see 'Where your systems agree')"] })];
@@ -246,7 +246,7 @@
     blocks.push(block("About this reading", { kind: "note", text: "This is a simplified Four Pillars reading (main stems and branches; hidden stems and luck pillars are not used). The hour pillar uses clock time and the day changes at 11pm." }));
     sections.push({ id: "bazi", title: "Chinese Four Pillars", icon: "yin", blocks });
 
-    return A.simplify({ snapshot: snap, sections, disclaimer: D.DISCLAIMER });
+    return A.simplify(A.enrich({ snapshot: snap, sections, disclaimer: D.DISCLAIMER }, prof, synth));
   }
   root.AB.buildReport = buildReport; root.AB.levelLabel = levelLabel;
 })(typeof window !== "undefined" ? window : globalThis);

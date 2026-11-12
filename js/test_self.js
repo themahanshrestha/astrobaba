@@ -1,6 +1,6 @@
 // Twins test: same chart, different names and answers must give different readings; no answers must change nothing.
 globalThis.Astronomy = require("./astronomy_node.js");
-for (const f of ["data", "ephem", "engine", "profile", "simplify", "quiz", "report", "compat", "api"]) require("./" + f + ".js");
+for (const f of ["data", "ephem", "engine", "profile", "simplify", "enrich", "quiz", "report", "compat", "api"]) require("./" + f + ".js");
 const assert = require("assert");
 const base = { date: "2015-06-09", time_mode: "exact", lat: 27.7172, lon: 85.324, tz: "Asia/Kathmandu", place: "KTM" };
 const today = { y: 2026, m: 11, d: 12 };
