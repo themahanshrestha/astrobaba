@@ -1,7 +1,7 @@
 // Compares JS compatibility output with the Python engine. node js/compare_compat.js dump.json
 const fs = require("fs");
 globalThis.Astronomy = require("./astronomy_node.js");
-for (const f of ["data", "ephem", "engine", "profile", "simplify", "report", "compat", "api"]) require("./" + f + ".js");
+for (const f of ["data", "ephem", "engine", "profile", "simplify", "quiz", "report", "compat", "api"]) require("./" + f + ".js");
 const { cases, out } = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 const today = { y: 2026, m: 11, d: 10 }; let bad = 0, n = 0;
 cases.forEach((c, i) => {

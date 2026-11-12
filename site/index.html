@@ -147,6 +147,17 @@ th{font-weight:500;color:var(--ink2);font-size:.8rem;text-transform:uppercase;le
 .linkbtn{background:none;border:0;padding:0;color:var(--lav-d);font:inherit;cursor:pointer;text-decoration:underline}
 #more-detail{margin:4px 0 14px}
 
+.b-y{background:var(--lav-d)}
+.fit{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.fit .chip{padding:5px 12px;font-size:.85rem}
+.q{border:0;padding:0;margin:0 0 18px;min-width:0}
+.q legend{font-weight:500;margin-bottom:8px;padding:0}
+.qopts{display:grid;gap:8px}
+.qopts label{border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;cursor:pointer;display:flex;gap:10px;margin:0;font-weight:400;background:#fff}
+.qopts label:has(input:checked){border-color:var(--lav-d);background:var(--bg2)}
+.qopts input{accent-color:var(--lav-d);margin-top:4px}
+@media print{.fit{display:none}}
+
 </style>
 </head>
 <body>
@@ -1211,6 +1222,66 @@ globalThis.ABDATA = {"SIGN_TEXT":{"Aries":{"kw":["bold","direct","pioneering"],"
 })(typeof window !== "undefined" ? window : globalThis);
 
 </script>
+<script>/* quiz.js */
+/* Short self-check (8 questions) and "Fits me / Doesn't fit" feedback. The chart gives the shared base;
+   these answers are the part that can differ between people born at the same moment (e.g. twins). */
+(function (root) {
+  "use strict";
+  const A = root.AB, S = A.D.SYN, TRAITS = S.TRAIT_KEYS, NT = TRAITS.length;
+  const QUIZ = [
+    { q: "When something new comes up, I usually…", a: ["jump in and work it out as I go", { initiative: 1 }], b: ["stop and think it through first", { precision: 0.5, introspection: 0.5 }] },
+    { q: "In a group, I tend to…", a: ["take the lead and be noticed", { radiance: 1 }], b: ["listen and watch first", { introspection: 0.6, harmony: 0.4 }] },
+    { q: "When I'm stressed, I…", a: ["talk it out with someone", { curiosity: 0.5, empathy: 0.5 }], b: ["go quiet and work it out alone", { introspection: 0.5, intensity: 0.5 }] },
+    { q: "I'm happiest when life is…", a: ["calm, steady and predictable", { steadiness: 0.6, discipline: 0.4 }], b: ["full of change and new places", { exploration: 0.6, curiosity: 0.4 }] },
+    { q: "In a disagreement, I…", a: ["look for peace and a middle ground", { harmony: 1 }], b: ["say plainly what I think", { initiative: 0.5, intensity: 0.5 }] },
+    { q: "I'm more drawn to…", a: ["new ideas that break the rules", { originality: 1 }], b: ["proven ways that work", { discipline: 0.5, steadiness: 0.5 }] },
+    { q: "People would call me…", a: ["warm and caring", { empathy: 1 }], b: ["sharp and well organised", { precision: 0.5, discipline: 0.5 }] },
+    { q: "I make sense of things through…", a: ["feelings, hunches and imagination", { imagination: 0.7, empathy: 0.3 }], b: ["facts, details and logic", { precision: 0.7, curiosity: 0.3 }] },
+  ];
+  const SELF_WEIGHT = 0.4, FIT_STEP = 0.3;
+
+  // answers: array of 8 values: 0 = first option, 1 = a bit of both, 2 = second option, null = skipped
+  function selfVector(answers) {
+    if (!Array.isArray(answers)) return null;
+    const x = Object.fromEntries(TRAITS.map((t) => [t, 0])); let n = 0;
+    QUIZ.forEach((q, i) => {
+      const v = answers[i]; if (v !== 0 && v !== 1 && v !== 2) return; n++;
+      const add = (w, f) => { for (const [t, val] of Object.entries(w)) x[t] += val * f; };
+      if (v === 0) add(q.a[1], 1); else if (v === 2) add(q.b[1], 1); else { add(q.a[1], 0.5); add(q.b[1], 0.5); }
+    });
+    if (n < 4) return null;
+    const mean = n / NT, out = {};
+    for (const t of TRAITS) out[t] = Math.max(0.35, Math.min(2.6, 0.35 + 0.65 * (x[t] / mean)));
+    return out;
+  }
+
+  // Blend into a synthesis: 60% chart systems, 40% your answers, plus a nudge from "fits me" / "doesn't fit".
+  function applySelf(synth, input) {
+    const self = selfVector(input.answers), fit = input.fit || {};
+    const hasFit = Object.values(fit).some((v) => v);
+    if (!self && !hasFit) return synth;
+    const TIDX = Object.fromEntries(TRAITS.map((t, i) => [t, i]));
+    for (const d of Object.keys(synth.domains)) {
+      for (const r of synth.domains[d]) {
+        let raw = r._raw;
+        if (self) {
+          raw = (1 - SELF_WEIGHT) * raw + SELF_WEIGHT * self[r.trait];
+          r.per_system = Object.assign({}, r.per_system, { you: A.pyround(self[r.trait], 2) });
+          r.you = self[r.trait] >= S.SUPPORT;
+          if (r.you) r.evidence = [{ source: "Your self-check answers", system: "you", needs_time: false }].concat(r.evidence).slice(0, 4);
+        }
+        raw += FIT_STEP * (fit[r.trait] || 0);
+        r._raw = raw; r.score = A.pyround(raw, 2);
+      }
+      synth.domains[d].sort((a, b) => (Math.round(b._raw * 1e6) - Math.round(a._raw * 1e6)) || (TIDX[a.trait] - TIDX[b.trait]));
+    }
+    synth._self = true;
+    return synth;
+  }
+  root.AB.QUIZ = QUIZ; root.AB.selfVector = selfVector; root.AB.applySelf = applySelf;
+})(typeof window !== "undefined" ? window : globalThis);
+
+</script>
 <script>/* report.js */
 /* Report builder: port of engine/report.py. Every sentence comes from the curated content library. */
 (function (root) {
@@ -1227,16 +1298,18 @@ globalThis.ABDATA = {"SIGN_TEXT":{"Aries":{"kw":["bold","direct","pioneering"],"
 
   function levelLabel(r) {
     const n = r.supporters.length, names = r.supporters.map((x) => SYS_NAME[x]).join(", ");
-    if (n >= 3) return `Strong theme · ${n} of 4 systems agree (${names})`;
-    if (n === 2) return `Supported · ${names} agree`;
-    if (n === 1) return `Emphasised by ${names}`;
-    return "";
+    const you = r.you ? " · and your answers" : "";
+    if (n >= 3) return `Strong theme · ${n} of 4 systems agree (${names})${you}`;
+    if (n === 2) return `Supported · ${names} agree${you}`;
+    if (n === 1) return `Emphasised by ${names}${you}`;
+    return r.you ? "Matches your answers" : "";
   }
   function opts(d, minP = 0.2) { const it = Object.entries(d).filter(([, v]) => v >= minP); return it.length ? it : Object.entries(d).slice(0, 1); }
   function block(h, o = {}) {
     const b = { h, src: o.src || [], time: o.time || false, kind: o.kind || "text" };
     if (o.text !== undefined) b.text = o.text;
     if (o.items !== undefined) b.items = o.items;
+    if (o.trait) b.trait = o.trait;
     return b;
   }
   function signView(h, field, wDist, vDist, wLabel, vLabel, time = false) {
@@ -1255,7 +1328,7 @@ globalThis.ABDATA = {"SIGN_TEXT":{"Aries":{"kw":["bold","direct","pioneering"],"
     return [w && Object.keys(w).length ? w : { [prof.western.planets[planet].sign]: 1 }, v && Object.keys(v).length ? v : { [prof.vedic.planets[planet].sign]: 1 }];
   }
   const traitChip = (r) => { const t = TRAITS[r.trait]; return { key: r.trait, name: t.title, tag: t.tag, level: r.level, level_label: levelLabel(r), score: r.score, per_system: r.per_system }; };
-  const traitBlock = (r, field, heading) => block(heading || TRAITS[r.trait].title, { text: TRAITS[r.trait][field], src: r.evidence.map((e) => e.source), time: r.evidence.some((e) => e.needs_time) });
+  const traitBlock = (r, field, heading) => block(heading || TRAITS[r.trait].title, { trait: r.trait, text: TRAITS[r.trait][field], src: r.evidence.map((e) => e.source), time: r.evidence.some((e) => e.needs_time) });
   const asp = (prof, a, b) => prof.western.aspects.find((x) => (x.a === a && x.b === b) || (x.a === b && x.b === a)) || null;
   const best = (d) => { const es = Object.entries(d || {}); if (!es.length) return [null, 0]; return es.reduce((m, e) => (e[1] > m[1] ? e : m)); };
   const maxKey = (o) => Object.keys(o).reduce((m, k) => (o[k] > o[m] ? k : m));
@@ -1329,14 +1402,14 @@ globalThis.ABDATA = {"SIGN_TEXT":{"Aries":{"kw":["bold","direct","pioneering"],"
     blocks = [signView("How your mind works (Mercury)", "mercury", ...planetDists(prof, "Mercury"), "Mercury", "Mercury")];
     let x = asp(prof, "Mercury", "Mars");
     if (x) blocks.push(block("Mercury – Mars", { text: D.PAIR_ASPECTS["Mercury|Mars"][x.type], src: [`Mercury ${x.type} Mars · Western`] }));
-    for (const r of mnd) blocks.push(block(`Mental style: ${TRAITS[r.trait].title}`, { text: TRAITS[r.trait].tag + " " + TRAITS[r.trait].strength, src: r.evidence.map((e) => e.source) }));
+    for (const r of mnd) blocks.push(block(`Mental style: ${TRAITS[r.trait].title}`, { text: TRAITS[r.trait].tag + " " + TRAITS[r.trait].strength, src: r.evidence.map((e) => e.source), trait: r.trait }));
     for (const r of A.lowest(synth, "mind", 1)) blocks.push(block(`To round out your thinking: ${TRAITS[r.trait].name.toLowerCase()}`, { text: TRAITS[r.trait].develop, src: ["Least-emphasised mental trait across systems"] }));
     sections.push({ id: "mind", title: "Mind & communication", icon: "mind", blocks });
 
     // career
     blocks = [block("Your professional signature", { items: car.map(traitChip), kind: "traits", src: ["Career-weighted view: Midheaven/10th house, Sun, Mars, Saturn, Mercury, Life Path, Expression"] })];
     for (const r of car) { const t = TRAITS[r.trait];
-      blocks.push(block(`${t.title} at work`, { text: `${t.work} Environments that fit: ${lc1(t.career)}`, src: r.evidence.map((e) => e.source), time: r.evidence.some((e) => e.needs_time) })); }
+      blocks.push(block(`${t.title} at work`, { text: `${t.work} Environments that fit: ${lc1(t.career)}`, src: r.evidence.map((e) => e.source), time: r.evidence.some((e) => e.needs_time), trait: r.trait })); }
     if (hasTime) {
       const h10 = {}; for (const [s, p] of Object.entries(dist.v.lagna || {})) h10[SIGNS[(SIGNS.indexOf(s) + 9) % 12]] = p;
       blocks.push(signView("Your public calling (Midheaven / 10th house)", "career", dist.w.mc, h10, "Midheaven", "10th house", true));
@@ -1363,7 +1436,7 @@ globalThis.ABDATA = {"SIGN_TEXT":{"Aries":{"kw":["bold","direct","pioneering"],"
     // relationships
     blocks = [block("Your relationship signature", { items: rel.map(traitChip), kind: "traits", src: ["Relationship-weighted view: Venus, Moon, Descendant/7th house, Soul Urge"] })];
     blocks.push(signView("How you love (Venus)", "venus", ...planetDists(prof, "Venus"), "Venus", "Venus"));
-    for (const r of rel.slice(0, 2)) blocks.push(block(`Your love style: ${TRAITS[r.trait].title}`, { text: TRAITS[r.trait].love, src: r.evidence.map((e) => e.source) }));
+    for (const r of rel.slice(0, 2)) blocks.push(block(`Your love style: ${TRAITS[r.trait].title}`, { text: TRAITS[r.trait].love, src: r.evidence.map((e) => e.source), trait: r.trait }));
     x = asp(prof, "Venus", "Mars");
     if (x) blocks.push(block("Romance and desire (Venus – Mars)", { text: D.PAIR_ASPECTS["Venus|Mars"][x.type], src: [`Venus ${x.type} Mars · Western`] }));
     if (hasTime) { const h7 = {}; for (const [s, p] of Object.entries(dist.v.lagna)) h7[SIGNS[(SIGNS.indexOf(s) + 6) % 12]] = p;
@@ -1376,7 +1449,7 @@ globalThis.ABDATA = {"SIGN_TEXT":{"Aries":{"kw":["bold","direct","pioneering"],"
     sections.push({ id: "relationships", title: "Love & relationships", icon: "heart", blocks });
 
     // wellbeing
-    blocks = ch.slice(0, 3).map((r) => block(`Under pressure: ${TRAITS[r.trait].title}`, { text: TRAITS[r.trait].stress, src: r.evidence.map((e) => e.source) }));
+    blocks = ch.slice(0, 3).map((r) => block(`Under pressure: ${TRAITS[r.trait].title}`, { text: TRAITS[r.trait].stress, src: r.evidence.map((e) => e.source), trait: r.trait }));
     const domE = maxKey(ex);
     blocks.push(block(`Your dominant element: ${domE}`, { text: D.ELEMENT_TEXT[domE].dom, src: ["Element balance · Western"] }));
     const domM = maxKey(w.modalities);
@@ -1630,10 +1703,11 @@ globalThis.ABDATA = {"SIGN_TEXT":{"Aries":{"kw":["bold","direct","pioneering"],"
       else { const mm = /^(\d{1,2}):(\d{2})/.exec(i.time); if (!mm || +mm[1] > 23 || +mm[2] > 59) err("Time must be HH:MM."); h = +mm[1]; m = +mm[2]; }
     }
     return { name: (i.name || "").trim(), current_name: i.current_name || null, date: i.date, time_mode: mode, hour: h, minute: m,
-      window_min: i.window_min || 120, lat: +i.lat, lon: +i.lon, tz: i.tz, place: i.place || "" };
+      window_min: i.window_min || 120, lat: +i.lat, lon: +i.lon, tz: i.tz, place: i.place || "",
+      answers: Array.isArray(i.answers) ? i.answers : null, fit: i.fit && typeof i.fit === "object" ? i.fit : null };
   }
   function full(input, today) {
-    const b = validate(input), prof = A.build(b, today || todayLocal()), synth = A.synthesize(prof);
+    const b = validate(input), prof = A.build(b, today || todayLocal()), synth = A.applySelf(A.synthesize(prof), b);
     return { prof, synth };
   }
   function pub(prof) {
@@ -1659,7 +1733,7 @@ globalThis.ABDATA = {"SIGN_TEXT":{"Aries":{"kw":["bold","direct","pioneering"],"
       .concat(P.filter((p) => p.name.toLowerCase().includes(q) && !p.name.toLowerCase().startsWith(q)), P.filter((p) => p.country.toLowerCase().includes(q) && !p.name.toLowerCase().includes(q)));
     return hits.slice(0, 8);
   }
-  root.AstroEngine = { profile, compare, places, InputError, validate };
+  root.AstroEngine = { profile, compare, places, InputError, validate, quiz: A.QUIZ };
 })(typeof window !== "undefined" ? window : globalThis);
 
 </script>
@@ -1720,6 +1794,7 @@ function route() {
   if (h[0] === "new") return viewNew();
   if (h[0] === "p") return viewProfile(h[1], h[2]);
   if (h[0] === "compare") return viewCompare();
+  if (h[0] === "quiz") return viewQuiz(h[1]);
   location.hash = "#/";
 }
 window.addEventListener("hashchange", route);
@@ -1898,8 +1973,10 @@ function summaryOf(d) {
 
 /* ---------- profile ---------- */
 const TAB_ORDER = ["overview", "strengths", "watchouts", "inner", "mind", "career", "hobbies", "relationships", "houses", "wellbeing", "purpose", "timing", "bazi", "numbers", "charts", "agreement"];
+let currentProfile = null;
 async function viewProfile(id, tab = "overview") {
   const p = profiles.find((x) => x.id === id);
+  currentProfile = p;
   if (!p) { location.hash = "#/"; return; }
   app.innerHTML = `<div class="card"><span class="spin"></span> Reading the sky…</div>`;
   let d;
@@ -1924,6 +2001,7 @@ async function viewProfile(id, tab = "overview") {
       ${sn("Lagna · Vedic", snap.lagna_vedic ? g(snap.lagna_vedic.sign) + maybe(snap.lagna_vedic) : "needs time", "", "butter")}
       ${sn("Life Path", snap.life_path, "", "mint")}
     </div>
+    ${quizBanner(p)}
     ${notes.length ? `<div class="banner"><b>About your birth data</b><ul>${notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul></div>` : ""}
     <div class="tabs" role="tablist" aria-label="Report sections">${TAB_ORDER.map((t) => `<button role="tab" id="tab-${t}" aria-selected="${t === tab}" data-tab="${t}">${TAB_ICON[t]} ${esc(titles[t])}</button>`).join("")}</div>
     <section id="panel" role="tabpanel" aria-live="polite"></section>
@@ -1931,6 +2009,14 @@ async function viewProfile(id, tab = "overview") {
   </div>`;
   const panel = $("#panel");
   panel.addEventListener("click", (e) => {
+    const fb = e.target.closest(".fitbtn");
+    if (fb) {
+      const t = fb.dataset.t, v = +fb.dataset.v, f = { ...(p.input.fit || {}) };
+      if (f[t] === v) delete f[t]; else f[t] = v;
+      p.input.fit = f; saveProfiles(profiles);
+      const y = window.scrollY; viewProfile(p.id, tab).then(() => window.scrollTo(0, y));
+      return;
+    }
     const lb = e.target.closest(".linkbtn");
     if (lb) { const r = lb.previousElementSibling; r.hidden = !r.hidden; lb.textContent = r.hidden ? "Read more" : "Show less"; return; }
     if (e.target.id === "more-detail") { $("#adv-box").hidden = false; e.target.hidden = true; }
@@ -1975,6 +2061,35 @@ function sectionHtml(blocks, meta, showAll) {
     : `<button class="btn ghost small" type="button" id="more-detail">Show more detail (${adv.length})</button><div id="adv-box" hidden>${adv.map((b, i) => blockHtml(b, meta, i)).join("")}</div>`;
   return h;
 }
+function quizBanner(p) {
+  if (!window.AstroEngine) return "";
+  if (Array.isArray(p.input.answers)) return `<div class="banner" style="background:var(--mint)">Your quick answers are part of this reading. <a href="#/quiz/${p.id}">Retake them</a></div>`;
+  return `<div class="card tint-mint"><b>Make it about you.</b> The chart is the same for anyone born at the same moment. Answer 8 quick questions (about a minute) so the reading reflects you.<p style="margin:10px 0 0"><a class="btn small" href="#/quiz/${p.id}">Start the quick questions</a></p></div>`;
+}
+function fitHtml(b) {
+  if (!b.trait || !window.AstroEngine || !currentProfile) return "";
+  const v = (currentProfile.input.fit || {})[b.trait] || 0;
+  return `<div class="fit" role="group" aria-label="Does this fit you?"><span class="muted small">Does this sound like you?</span>
+    <button type="button" class="chip fitbtn ${v === 1 ? "on" : ""}" data-t="${esc(b.trait)}" data-v="1" aria-pressed="${v === 1}">Fits me</button>
+    <button type="button" class="chip fitbtn ${v === -1 ? "on" : ""}" data-t="${esc(b.trait)}" data-v="-1" aria-pressed="${v === -1}">Doesn't fit</button></div>`;
+}
+function viewQuiz(id) {
+  const p = profiles.find((x) => x.id === id);
+  if (!p || !window.AstroEngine) { location.hash = "#/"; return; }
+  const Q = window.AstroEngine.quiz, ans = Array.isArray(p.input.answers) ? p.input.answers : new Array(Q.length).fill(null);
+  app.innerHTML = `<div class="card fade"><h2>Quick questions for ${esc((p.input.name || "you").split(" ")[0])}</h2>
+    <p class="muted">Pick what sounds more like you. There are no right answers, and you can skip any.</p>
+    ${Q.map((q, i) => `<fieldset class="q"><legend>${i + 1}. ${esc(q.q)}</legend><div class="qopts">
+      <label><input type="radio" name="q${i}" value="0" ${ans[i] === 0 ? "checked" : ""}><span>${esc(q.a[0])}</span></label>
+      <label><input type="radio" name="q${i}" value="1" ${ans[i] === 1 ? "checked" : ""}><span>A bit of both</span></label>
+      <label><input type="radio" name="q${i}" value="2" ${ans[i] === 2 ? "checked" : ""}><span>${esc(q.b[0])}</span></label></div></fieldset>`).join("")}
+    <div id="quiz-err"></div><div class="row"><button class="btn" id="quiz-save" type="button">Save my answers</button><a class="btn ghost" href="#/p/${id}">Cancel</a></div></div>`;
+  $("#quiz-save").onclick = () => {
+    const a = Q.map((_, i) => { const r = document.querySelector(`input[name=q${i}]:checked`); return r ? +r.value : null; });
+    if (a.filter((x) => x !== null).length < 4) { $("#quiz-err").innerHTML = '<div class="err" role="alert">Please answer at least 4 questions.</div>'; return; }
+    p.input.answers = a; saveProfiles(profiles); location.hash = "#/p/" + id;
+  };
+}
 function blockHtml(b, meta, i) {
   const badge = b.time && meta.time_mode !== "exact" ? `<span class="badge">depends on birth time</span>` : "";
   if (b.kind === "locked") return `<div class="locked"><h3>${esc(b.h)}</h3><p>🔒 ${esc(b.text)}</p></div>`;
@@ -1985,11 +2100,11 @@ function blockHtml(b, meta, i) {
   else if (b.kind === "pillars") inner = `<div class="pgrid">${b.items.map((p) => `<div class="pcell"><small>${esc(p.name)}</small><b>${esc(p.stem)}</b><b>${esc(p.branch)}</b><span>${esc(p.polarity)} ${esc(p.stem_el)}</span><span>${esc(p.animal)} · ${esc(p.branch_el)}</span></div>`).join("")}</div>`;
   else if (b.kind === "list") inner = `<div class="list">${b.items.map((v) => `<p class="item">${v.label ? `<b>${esc(v.label)}.</b> ` : ""}${clip(v.text)}</p>`).join("")}</div>`;
   else inner = `<p>${clip(b.text)}</p>`;
-  return `<div class="card block${b.kind === "traits" ? " tint-lav" : ""}"><h3>${esc(b.h)}${badge}</h3>${inner}${why(b.src)}</div>`;
+  return `<div class="card block${b.kind === "traits" ? " tint-lav" : ""}"><h3>${esc(b.h)}${badge}</h3>${inner}${fitHtml(b)}${why(b.src)}</div>`;
 }
 function sysBars(ps) {
   const row = (lab, v, cls) => `<span>${lab}</span><div class="bar" title="${lab}: ${v}"><i class="${cls}" style="width:${Math.min(100, v / 3 * 100)}%"></i></div>`;
-  return `<div class="bars" aria-label="Strength of this theme in each system">${row("Western", ps.western, "b-w")}${row("Vedic", ps.vedic, "b-v")}${row("Numerology", ps.numerology, "b-n")}${row("BaZi", ps.bazi, "b-z")}</div>`;
+  return `<div class="bars" aria-label="Strength of this theme in each system">${row("Western", ps.western, "b-w")}${row("Vedic", ps.vedic, "b-v")}${row("Numerology", ps.numerology, "b-n")}${row("BaZi", ps.bazi, "b-z")}${ps.you !== undefined ? row("You", ps.you, "b-y") : ""}</div>`;
 }
 
 /* numbers */
@@ -2099,7 +2214,7 @@ function agreementPanel(d) {
 
 /* ---------- compare ---------- */
 let cmp = { a: "", b: "", rel: "romantic" };
-const RELS = [["romantic", "Romantic"], ["business", "Business"], ["family", "Family"], ["friends", "Friends"]];
+const RELS = [["romantic", "Romantic"], ["business", "Business"], ["family", "Family"], ["friends", "Friends"], ["twins", "Twins"]];
 function viewCompare() {
   if (profiles.length < 2) {
     app.innerHTML = `<div class="card fade"><h2>Compare two people</h2><p>You need at least two saved profiles to compare. ${profiles.length ? "You have one so far." : ""} Add the other person with their birth details. Only add someone if they're comfortable with it.</p><a class="btn" href="#/new">Add a profile</a></div>`;
@@ -2123,9 +2238,38 @@ async function runCompare() {
   out.innerHTML = `<div class="card"><span class="spin"></span> Comparing charts…</div>`;
   const A = profiles.find((p) => p.id === cmp.a), B = profiles.find((p) => p.id === cmp.b);
   try {
-    const r = await api("/api/compare", { a: A.input, b: B.input, relation: cmp.rel });
-    out.innerHTML = compareHtml(r); out.scrollIntoView({ behavior: "smooth", block: "start" });
+    const r = await api("/api/compare", { a: A.input, b: B.input, relation: cmp.rel === "twins" ? "family" : cmp.rel });
+    let twin = "";
+    if (window.AstroEngine && (cmp.rel === "twins" || A.input.date === B.input.date)) {
+      const [da, db] = await Promise.all([getProfile(A), getProfile(B)]);
+      twin = twinHtml(da, db, r.names[0], r.names[1]);
+    }
+    out.innerHTML = twin + compareHtml(r); out.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (e) { out.innerHTML = `<div class="err" role="alert">${esc(e.message)}</div>`; }
+}
+function twinHtml(da, db, na, nb) {
+  const pa = da.profile, pb = db.profile, same = [];
+  for (const pl of ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]) if (pa.western.planets[pl].sign === pb.western.planets[pl].sign) same.push(`${pl} in ${pa.western.planets[pl].sign}`);
+  const diffs = [], f = (x) => `Expression ${x.expression}, Soul Urge ${x.soul_urge}, Personality ${x.personality}`;
+  const n1 = pa.numerology.pythagorean, n2 = pb.numerology.pythagorean;
+  if (n1 && n2) diffs.push(f(n1) !== f(n2) ? `<b>Names.</b> ${esc(na)}: ${f(n1)}. ${esc(nb)}: ${f(n2)}.` : "<b>Names.</b> The name numbers are identical. Check that each twin's full birth name is entered.");
+  if (pa.western.asc && pb.western.asc) {
+    let d = Math.abs(pa.western.asc.lon - pb.western.asc.lon) % 360; d = Math.min(d, 360 - d);
+    diffs.push(`<b>Birth minute.</b> The Rising point differs by only ${d.toFixed(2)}°` + (pa.western.asc.sign === pb.western.asc.sign ? ", still in the same sign." : ", which puts them in different Rising signs."));
+  }
+  const you = (d) => Object.fromEntries(d.consensus[0].rows.filter((r) => r.per_system.you !== undefined).map((r) => [r.trait, r]));
+  const ya = you(da), yb = you(db);
+  if (Object.keys(ya).length && Object.keys(yb).length) {
+    const rows = Object.keys(ya).map((t) => ({ t, title: ya[t].title.replace("The ", ""), d: ya[t].per_system.you - yb[t].per_system.you })).sort((x, y) => y.d - x.d);
+    const leanA = rows.filter((r) => r.d >= 0.4).slice(0, 2), leanB = rows.filter((r) => r.d <= -0.4).reverse().slice(0, 2);
+    if (leanA.length) diffs.push(`<b>Their answers.</b> ${esc(na)} leans more toward ${leanA.map((r) => r.title).join(" and ")}.`);
+    if (leanB.length) diffs.push(`<b>Their answers.</b> ${esc(nb)} leans more toward ${leanB.map((r) => r.title).join(" and ")}.`);
+    if (!leanA.length && !leanB.length) diffs.push("<b>Their answers.</b> Very similar so far. Try the quick questions again, answering honestly for each twin.");
+  } else diffs.push("<b>Their answers.</b> Each twin can answer the 8 quick questions on their own profile page. That is where they will differ most.");
+  return `<div class="card tint-peach fade"><h2>Twin view</h2>
+    <p><b>Same sky, different people.</b> A birth chart can only describe the moment you were born. For twins that moment is nearly the same, so the chart is a shared starting point.</p>
+    ${same.length ? `<h3>What they share</h3><p>${esc(same.join(", "))}.</p>` : ""}
+    <h3>Where they differ</h3>${diffs.map((x) => `<p>${x}</p>`).join("")}</div>`;
 }
 function compareHtml(r) {
   const [a, b] = r.names;

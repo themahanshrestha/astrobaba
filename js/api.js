@@ -17,10 +17,11 @@
       else { const mm = /^(\d{1,2}):(\d{2})/.exec(i.time); if (!mm || +mm[1] > 23 || +mm[2] > 59) err("Time must be HH:MM."); h = +mm[1]; m = +mm[2]; }
     }
     return { name: (i.name || "").trim(), current_name: i.current_name || null, date: i.date, time_mode: mode, hour: h, minute: m,
-      window_min: i.window_min || 120, lat: +i.lat, lon: +i.lon, tz: i.tz, place: i.place || "" };
+      window_min: i.window_min || 120, lat: +i.lat, lon: +i.lon, tz: i.tz, place: i.place || "",
+      answers: Array.isArray(i.answers) ? i.answers : null, fit: i.fit && typeof i.fit === "object" ? i.fit : null };
   }
   function full(input, today) {
-    const b = validate(input), prof = A.build(b, today || todayLocal()), synth = A.synthesize(prof);
+    const b = validate(input), prof = A.build(b, today || todayLocal()), synth = A.applySelf(A.synthesize(prof), b);
     return { prof, synth };
   }
   function pub(prof) {
@@ -46,5 +47,5 @@
       .concat(P.filter((p) => p.name.toLowerCase().includes(q) && !p.name.toLowerCase().startsWith(q)), P.filter((p) => p.country.toLowerCase().includes(q) && !p.name.toLowerCase().includes(q)));
     return hits.slice(0, 8);
   }
-  root.AstroEngine = { profile, compare, places, InputError, validate };
+  root.AstroEngine = { profile, compare, places, InputError, validate, quiz: A.QUIZ };
 })(typeof window !== "undefined" ? window : globalThis);

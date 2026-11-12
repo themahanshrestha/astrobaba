@@ -41,8 +41,10 @@ def _opts(dist: dict[str, float], min_p: float = 0.2) -> list[tuple[str, float]]
     return items or list(dist.items())[:1]
 
 
-def _block(h, text=None, items=None, src=None, time=False, kind="text"):
+def _block(h, text=None, items=None, src=None, time=False, kind="text", trait=None):
     b = {"h": h, "src": src or [], "time": time, "kind": kind}
+    if trait:
+        b["trait"] = trait
     if text is not None:
         b["text"] = text
     if items is not None:
@@ -87,7 +89,7 @@ def _trait_chip(r):
 
 def _trait_block(r, field, heading=None):
     t = TRAITS[r["trait"]]
-    return _block(heading or t["title"], text=t[field],
+    return _block(heading or t["title"], text=t[field], trait=r["trait"],
                   src=[e["source"] for e in r["evidence"]], time=any(e["needs_time"] for e in r["evidence"]))
 
 
@@ -231,7 +233,7 @@ def build_report(prof: dict, synth: dict) -> dict:
         blocks.append(_block("Mercury – Mars", text=PAIR_ASPECTS[("Mercury", "Mars")][x["type"]], src=[f"Mercury {x['type']} Mars · Western"]))
     for r in mnd:
         blocks.append(_block(f"Mental style: {TRAITS[r['trait']]['title']}", text=TRAITS[r["trait"]]["tag"] + " " + TRAITS[r["trait"]]["strength"],
-                             src=[e["source"] for e in r["evidence"]]))
+                             src=[e["source"] for e in r["evidence"]], trait=r["trait"]))
     for r in S.lowest(synth, "mind", 1):
         blocks.append(_block(f"To round out your thinking: {TRAITS[r['trait']]['name'].lower()}", text=TRAITS[r["trait"]]["develop"],
                              src=["Least-emphasised mental trait across systems"]))
@@ -243,7 +245,7 @@ def build_report(prof: dict, synth: dict) -> dict:
     for r in car:
         t = TRAITS[r["trait"]]
         blocks.append(_block(f"{t['title']} at work", text=f"{t['work']} Environments that fit: {t['career'][0].lower() + t['career'][1:]}",
-                             src=[e["source"] for e in r["evidence"]], time=any(e["needs_time"] for e in r["evidence"])))
+                             src=[e["source"] for e in r["evidence"]], time=any(e["needs_time"] for e in r["evidence"]), trait=r["trait"]))
     if has_time:
         mc = dist["w"]["mc"]; h10 = {A.SIGNS[(A.SIGNS.index(s) + 9) % 12]: p for s, p in (dist["v"]["lagna"] or {}).items()}
         blocks.append(_sign_view("Your public calling (Midheaven / 10th house)", "career", mc, h10, "Midheaven", "10th house", time=True))
@@ -284,7 +286,7 @@ def build_report(prof: dict, synth: dict) -> dict:
                      src=["Relationship-weighted view: Venus, Moon, Descendant/7th house, Soul Urge"])]
     blocks.append(_sign_view("How you love (Venus)", "venus", *_planet_dists(prof, "Venus"), "Venus", "Venus"))
     for r in rel[:2]:
-        blocks.append(_block(f"Your love style: {TRAITS[r['trait']]['title']}", text=TRAITS[r["trait"]]["love"], src=[e["source"] for e in r["evidence"]]))
+        blocks.append(_block(f"Your love style: {TRAITS[r['trait']]['title']}", text=TRAITS[r["trait"]]["love"], src=[e["source"] for e in r["evidence"]], trait=r["trait"]))
     x = _asp(prof, "Venus", "Mars")
     if x:
         blocks.append(_block("Romance and desire (Venus – Mars)", text=PAIR_ASPECTS[("Venus", "Mars")][x["type"]], src=[f"Venus {x['type']} Mars · Western"]))
@@ -308,7 +310,7 @@ def build_report(prof: dict, synth: dict) -> dict:
     # ---------- wellbeing ---------------------------------------------------------------------------
     blocks = []
     for r in ch[:3]:
-        blocks.append(_block(f"Under pressure: {TRAITS[r['trait']]['title']}", text=TRAITS[r["trait"]]["stress"], src=[e["source"] for e in r["evidence"]]))
+        blocks.append(_block(f"Under pressure: {TRAITS[r['trait']]['title']}", text=TRAITS[r["trait"]]["stress"], src=[e["source"] for e in r["evidence"]], trait=r["trait"]))
     dom_e = max(ex, key=ex.get)
     blocks.append(_block(f"Your dominant element: {dom_e}", text=ELEMENT_TEXT[dom_e]["dom"], src=["Element balance · Western"]))
     dom_m = max(w["modalities"], key=w["modalities"].get)

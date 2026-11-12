@@ -71,3 +71,8 @@ def test_compatibility_matches_python(tmp_path):
     r = run_node("js/compare_compat.js", str(tmp_path / "c.json"))
     assert r.returncode == 0, r.stderr
     assert "with differences: 0" in r.stdout, r.stdout
+
+
+def test_twins_quiz_and_fit_feedback():
+    r = run_node("js/test_self.js")
+    assert r.returncode == 0, r.stdout + r.stderr

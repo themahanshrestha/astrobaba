@@ -13,16 +13,18 @@
 
   function levelLabel(r) {
     const n = r.supporters.length, names = r.supporters.map((x) => SYS_NAME[x]).join(", ");
-    if (n >= 3) return `Strong theme · ${n} of 4 systems agree (${names})`;
-    if (n === 2) return `Supported · ${names} agree`;
-    if (n === 1) return `Emphasised by ${names}`;
-    return "";
+    const you = r.you ? " · and your answers" : "";
+    if (n >= 3) return `Strong theme · ${n} of 4 systems agree (${names})${you}`;
+    if (n === 2) return `Supported · ${names} agree${you}`;
+    if (n === 1) return `Emphasised by ${names}${you}`;
+    return r.you ? "Matches your answers" : "";
   }
   function opts(d, minP = 0.2) { const it = Object.entries(d).filter(([, v]) => v >= minP); return it.length ? it : Object.entries(d).slice(0, 1); }
   function block(h, o = {}) {
     const b = { h, src: o.src || [], time: o.time || false, kind: o.kind || "text" };
     if (o.text !== undefined) b.text = o.text;
     if (o.items !== undefined) b.items = o.items;
+    if (o.trait) b.trait = o.trait;
     return b;
   }
   function signView(h, field, wDist, vDist, wLabel, vLabel, time = false) {
@@ -41,7 +43,7 @@
     return [w && Object.keys(w).length ? w : { [prof.western.planets[planet].sign]: 1 }, v && Object.keys(v).length ? v : { [prof.vedic.planets[planet].sign]: 1 }];
   }
   const traitChip = (r) => { const t = TRAITS[r.trait]; return { key: r.trait, name: t.title, tag: t.tag, level: r.level, level_label: levelLabel(r), score: r.score, per_system: r.per_system }; };
-  const traitBlock = (r, field, heading) => block(heading || TRAITS[r.trait].title, { text: TRAITS[r.trait][field], src: r.evidence.map((e) => e.source), time: r.evidence.some((e) => e.needs_time) });
+  const traitBlock = (r, field, heading) => block(heading || TRAITS[r.trait].title, { trait: r.trait, text: TRAITS[r.trait][field], src: r.evidence.map((e) => e.source), time: r.evidence.some((e) => e.needs_time) });
   const asp = (prof, a, b) => prof.western.aspects.find((x) => (x.a === a && x.b === b) || (x.a === b && x.b === a)) || null;
   const best = (d) => { const es = Object.entries(d || {}); if (!es.length) return [null, 0]; return es.reduce((m, e) => (e[1] > m[1] ? e : m)); };
   const maxKey = (o) => Object.keys(o).reduce((m, k) => (o[k] > o[m] ? k : m));
@@ -115,14 +117,14 @@
     blocks = [signView("How your mind works (Mercury)", "mercury", ...planetDists(prof, "Mercury"), "Mercury", "Mercury")];
     let x = asp(prof, "Mercury", "Mars");
     if (x) blocks.push(block("Mercury – Mars", { text: D.PAIR_ASPECTS["Mercury|Mars"][x.type], src: [`Mercury ${x.type} Mars · Western`] }));
-    for (const r of mnd) blocks.push(block(`Mental style: ${TRAITS[r.trait].title}`, { text: TRAITS[r.trait].tag + " " + TRAITS[r.trait].strength, src: r.evidence.map((e) => e.source) }));
+    for (const r of mnd) blocks.push(block(`Mental style: ${TRAITS[r.trait].title}`, { text: TRAITS[r.trait].tag + " " + TRAITS[r.trait].strength, src: r.evidence.map((e) => e.source), trait: r.trait }));
     for (const r of A.lowest(synth, "mind", 1)) blocks.push(block(`To round out your thinking: ${TRAITS[r.trait].name.toLowerCase()}`, { text: TRAITS[r.trait].develop, src: ["Least-emphasised mental trait across systems"] }));
     sections.push({ id: "mind", title: "Mind & communication", icon: "mind", blocks });
 
     // career
     blocks = [block("Your professional signature", { items: car.map(traitChip), kind: "traits", src: ["Career-weighted view: Midheaven/10th house, Sun, Mars, Saturn, Mercury, Life Path, Expression"] })];
     for (const r of car) { const t = TRAITS[r.trait];
-      blocks.push(block(`${t.title} at work`, { text: `${t.work} Environments that fit: ${lc1(t.career)}`, src: r.evidence.map((e) => e.source), time: r.evidence.some((e) => e.needs_time) })); }
+      blocks.push(block(`${t.title} at work`, { text: `${t.work} Environments that fit: ${lc1(t.career)}`, src: r.evidence.map((e) => e.source), time: r.evidence.some((e) => e.needs_time), trait: r.trait })); }
     if (hasTime) {
       const h10 = {}; for (const [s, p] of Object.entries(dist.v.lagna || {})) h10[SIGNS[(SIGNS.indexOf(s) + 9) % 12]] = p;
       blocks.push(signView("Your public calling (Midheaven / 10th house)", "career", dist.w.mc, h10, "Midheaven", "10th house", true));
@@ -149,7 +151,7 @@
     // relationships
     blocks = [block("Your relationship signature", { items: rel.map(traitChip), kind: "traits", src: ["Relationship-weighted view: Venus, Moon, Descendant/7th house, Soul Urge"] })];
     blocks.push(signView("How you love (Venus)", "venus", ...planetDists(prof, "Venus"), "Venus", "Venus"));
-    for (const r of rel.slice(0, 2)) blocks.push(block(`Your love style: ${TRAITS[r.trait].title}`, { text: TRAITS[r.trait].love, src: r.evidence.map((e) => e.source) }));
+    for (const r of rel.slice(0, 2)) blocks.push(block(`Your love style: ${TRAITS[r.trait].title}`, { text: TRAITS[r.trait].love, src: r.evidence.map((e) => e.source), trait: r.trait }));
     x = asp(prof, "Venus", "Mars");
     if (x) blocks.push(block("Romance and desire (Venus – Mars)", { text: D.PAIR_ASPECTS["Venus|Mars"][x.type], src: [`Venus ${x.type} Mars · Western`] }));
     if (hasTime) { const h7 = {}; for (const [s, p] of Object.entries(dist.v.lagna)) h7[SIGNS[(SIGNS.indexOf(s) + 6) % 12]] = p;
@@ -162,7 +164,7 @@
     sections.push({ id: "relationships", title: "Love & relationships", icon: "heart", blocks });
 
     // wellbeing
-    blocks = ch.slice(0, 3).map((r) => block(`Under pressure: ${TRAITS[r.trait].title}`, { text: TRAITS[r.trait].stress, src: r.evidence.map((e) => e.source) }));
+    blocks = ch.slice(0, 3).map((r) => block(`Under pressure: ${TRAITS[r.trait].title}`, { text: TRAITS[r.trait].stress, src: r.evidence.map((e) => e.source), trait: r.trait }));
     const domE = maxKey(ex);
     blocks.push(block(`Your dominant element: ${domE}`, { text: D.ELEMENT_TEXT[domE].dom, src: ["Element balance · Western"] }));
     const domM = maxKey(w.modalities);

@@ -319,3 +319,9 @@ Web app, English, one user + partner profile, Tier-1 systems only, 4 reports (Co
 - Hosting is now a drag-and-drop of `site/` (Netlify Drop, Cloudflare Pages, GitHub Pages). The Python hosting options
   are kept in `DEPLOY.md` but are no longer needed.
 - Known limits: Safari not tested here (Chromium only); dasha dates can differ by a day from the Swiss-based engine.
+
+### v0.5: works for twins
+- 8-question self-check (forced choice, about a minute) blended 60/40 with the chart; "Fits me / Doesn't fit" buttons on trait
+  statements nudge the ranking; a Twin view in Compare shows what twins share (the sky) and where they differ (names, Rising
+  degree, answers). Same name + same chart + opposite answers gives different readings (js/test_self.js).
+- Honest limit: this does not make the chart distinguish twins. The answers do. These features live in the JS app only.
